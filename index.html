@@ -985,7 +985,8 @@ const Countdown = {
     if(B.countdownRemaining<=0){
       B.countdownRunning=false;
       if(B.bellEnabled){ playBeep(400,880); setTimeout(()=>playBeep(400,880),500); setTimeout(()=>playBeep(600,1046),1000); }
-      showCountdownDone();
+      if(location.hash.includes('/test/input')) showInputCountdownDone();
+      else showCountdownDone();
       return;
     }
     B.countdownRAF=requestAnimationFrame(()=>this._tick());
@@ -1234,15 +1235,16 @@ async function startTest(eid){
   const type=getEventType(ev);
   State.timerEventId=eid;
   if(type==='timing'){Timer.reset();State.timerMode='normal';Router.navigate('/timer/run');}
-  else if(type==='countdown'||type==='batch-timing'){
+  else if(type==='batch-timing'){
     State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
     State.batchTest.selectedStudentIds=[];State.batchTest.testedStudentIds=[];
     State.batchTest.inputValues={};State.batchTest.sessionId=null;
     Router.navigate('/test/select-students');
   }
-  else if(type==='input'){
+  else if(type==='countdown'||type==='input'){
     State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
     State.batchTest.testedStudentIds=[];State.batchTest.inputValues={};State.batchTest.sessionId=null;
+    Countdown.reset();
     Router.navigate('/test/input');
   }
 }
@@ -1263,10 +1265,11 @@ async function resumeTest(sessionId){
   // 加载已有成绩
   const recs=await DB.getRecordsBySession(sessionId);
   for(const r of recs){for(const sid of (r.studentIds||[])){State.batchTest.inputValues[sid]=getRecordValue(r,ev);}}
-  if(type==='countdown'||type==='batch-timing'){
+  if(type==='batch-timing'){
     State.batchTest.selectedStudentIds=[];
     Router.navigate('/test/select-students');
-  } else if(type==='input'){
+  } else if(type==='countdown'||type==='input'){
+    Countdown.reset();
     Router.navigate('/test/input');
   }
 }
@@ -1466,6 +1469,8 @@ async function exitBatchTest(){
     const session=await DB.get('sessions',B.sessionId);
     if(session){session.status='incomplete';session.testedStudentIds=B.testedStudentIds;await DB.put('sessions',session);}
   }
+  B.countdownStarted=false;
+  Countdown.reset();
   Router.navigate('/');
 }
 
@@ -1538,7 +1543,11 @@ async function renderCountdownTest(){
 }
 
 function startCountdown(sec){Countdown.start(sec);renderCountdownTest();}
-function toggleBell(){State.batchTest.bellEnabled=!State.batchTest.bellEnabled;renderCountdownTest();}
+function toggleBell(){
+  State.batchTest.bellEnabled=!State.batchTest.bellEnabled;
+  if(location.hash.includes('/test/input')) renderInputTest();
+  else renderCountdownTest();
+}
 function updateScoreInput(sid,val){State.batchTest.inputValues[sid]=val?parseFloat(val):null;}
 
 function showCountdownDone(){
@@ -1561,19 +1570,40 @@ async function renderInputTest(){
   const group=await DB.get('groups',B.groupId);
   const students=await DB.getStudentsByGroup(B.groupId);
   students.sort((a,b)=>a.number-b.number);
+  const type=getEventType(event);
+  const hasCountdown=type==='countdown';
 
   const testedCount=B.testedStudentIds.length;
   const filledCount=students.filter(s=>B.inputValues[s.id]!=null&&!B.testedStudentIds.includes(s.id)).length;
   const totalCount=students.length;
   const donePercent=Math.round((testedCount/Math.max(totalCount,1))*100);
 
+  const isRunning=B.countdownRunning;
+  const sec=Math.ceil(B.countdownRemaining/1000);
+  const isDone=hasCountdown&&!isRunning&&B.countdownRemaining<=0&&B.countdownRemaining!==undefined&&B.countdownStarted;
+  const isIdle=hasCountdown&&!isRunning&&!isDone;
+  const cdSec=event?.countdownSeconds||60;
+
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="topbar">
         <button class="back" onclick="exitBatchTest()">&larr;</button>
         <div class="title">${getEventEmoji(event?.name||'')} ${event?.name||''}</div>
+        ${hasCountdown?`<div class="bell-toggle ${B.bellEnabled?'on':''}" onclick="toggleBell()">
+          <div class="bell-dot">${B.bellEnabled?'🔔':'🔕'}</div>
+          <span>${B.bellEnabled?'铃声开':'铃声关'}</span>
+        </div>`:''}
       </div>
       <div class="page-subtitle" style="margin-bottom:12px;">${group?.name||''} · 输入成绩</div>
+
+      ${hasCountdown?`
+      <div class="countdown-display" style="margin-bottom:16px;">
+        <div class="countdown-time ${isRunning&&sec<=10?'warning':isDone?'done':''}" id="countdown-display">${isDone?'0':isIdle?cdSec:sec}</div>
+        <div class="timer-status ${isRunning?'':isDone?'stopped':'idle'}">${isRunning?'计时中':isDone?'已结束':'准备就绪'}</div>
+      </div>
+      ${isIdle?`<button class="btn-start" onclick="startInputCountdown(${cdSec})" style="margin-bottom:16px;">开始倒计时</button>`:''}
+      ${isRunning?`<button class="btn-stop" style="width:100%;margin-bottom:16px;" onclick="Countdown.stop();renderInputTest();">暂停</button>`:''}
+      `:''}
 
       <div class="progress-strip">
         <div class="ps-label">进度</div>
@@ -1590,7 +1620,6 @@ async function renderInputTest(){
           <input class="score-input ${hasFilled?'filled':''}" type="number" step="any" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value);this.classList.toggle('filled',!!this.value)">
           <span class="score-unit">${getUnitLabel(event)}</span>
         </div>`;}).join('')}
-      <button class="btn btn-teal" style="margin-top:16px;" onclick="saveBatchScores()">保存已填成绩${filledCount?' ('+filledCount+'人)':''}</button>
 
       ${testedCount?`<div class="tested-section">
         <div class="tested-header">
@@ -1605,7 +1634,29 @@ async function renderInputTest(){
             <span class="score-val">${val!=null?val+getUnitLabel(event):'--'}</span>
           </div>`;}).join('')}
       </div>`:''}
+      <div style="height:72px;"></div>
+    </div>
+    <div class="sticky-bottom-bar">
+      <button class="btn btn-teal" onclick="saveBatchScores()">保存已填成绩${filledCount?' ('+filledCount+'人)':''}</button>
     </div>`;
+  if(hasCountdown&&isRunning) Countdown._tick();
+}
+
+function startInputCountdown(sec){
+  State.batchTest.countdownStarted=true;
+  Countdown.start(sec);
+  renderInputTest();
+}
+
+function showInputCountdownDone(){
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="confirm-overlay" id="countdown-done-dialog">
+      <div class="confirm-box">
+        <div class="title">⏰ 时间到！</div>
+        <div class="msg">倒计时已结束，请输入学生成绩。</div>
+        <button class="btn btn-accent btn-sm" onclick="document.getElementById('countdown-done-dialog').remove();renderInputTest();">确认</button>
+      </div>
+    </div>`);
 }
 
 /* ============================================================
@@ -1696,7 +1747,7 @@ async function saveBatchScores(){
 
   // 收集有成绩的学生
   let studentsToSave=[];
-  if(type==='input'){
+  if(type==='input'||type==='countdown'){
     const allStudents=await DB.getStudentsByGroup(B.groupId);
     studentsToSave=allStudents.filter(s=>B.inputValues[s.id]!=null&&!B.testedStudentIds.includes(s.id));
   } else {
@@ -1738,6 +1789,8 @@ async function saveBatchScores(){
     session.status='completed';
     await DB.put('sessions',session);
     showToast('全部测试完成');
+    B.countdownStarted=false;
+    Countdown.reset();
     // 计算排名
     const recs=await DB.getRecordsBySession(B.sessionId);
     recs.sort((a,b)=>compareValues(getRecordValue(a,event),getRecordValue(b,event),event.rankOrder||'asc'));
@@ -1750,9 +1803,8 @@ async function saveBatchScores(){
   showToast(`已保存 ${studentsToSave.length} 人成绩`);
 
   // 刷新当前页面
-  Countdown.reset(); BatchTimer.reset();
-  if(type==='countdown') renderCountdownTest();
-  else if(type==='input') renderInputTest();
+  BatchTimer.reset();
+  if(type==='countdown'||type==='input') renderInputTest();
   else if(type==='batch-timing') renderBatchTimingTest();
 }
 
