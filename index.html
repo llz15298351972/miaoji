@@ -54,8 +54,8 @@ body::before {
   pointer-events:none; z-index:0;
 }
 #app { height:100%; display:flex; flex-direction:column; position:relative; z-index:1; max-width:500px; margin:0 auto; }
-.page { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:24px; padding-bottom:calc(var(--nav-height)+var(--safe-bottom)+40px); }
-.page.no-nav { padding:24px; }
+.page { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:24px; padding-bottom:calc(var(--nav-height)+var(--safe-bottom)+90px); }
+.page.no-nav { padding:24px; padding-bottom:40px; }
 
 /* 通用排版 */
 .page-header { margin-bottom:20px; }
@@ -1251,10 +1251,10 @@ async function startTest(eid){
   State.timerEventId=eid;
   if(type==='timing'){Timer.reset();State.timerMode='normal';Router.navigate('/timer/run');}
   else if(type==='batch-timing'){
-    State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
-    State.batchTest.selectedStudentIds=[];State.batchTest.testedStudentIds=[];
-    State.batchTest.inputValues={};State.batchTest.sessionId=null;
-    Router.navigate('/test/select-students');
+    Timer.reset();
+    State.timerMode='batch-fitness';
+    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[]};
+    Router.navigate('/timer/run');
   }
   else if(type==='countdown'||type==='input'){
     State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
@@ -1281,8 +1281,21 @@ async function resumeTest(sessionId){
   const recs=await DB.getRecordsBySession(sessionId);
   for(const r of recs){for(const sid of (r.studentIds||[])){State.batchTest.inputValues[sid]=getRecordValue(r,ev);}}
   if(type==='batch-timing'){
-    State.batchTest.selectedStudentIds=[];
-    Router.navigate('/test/select-students');
+    Timer.reset();
+    State.timerMode='batch-fitness';
+    State.batchFitness={
+      sessionId:sessionId,
+      testedStudentIds:session.testedStudentIds||[],
+      testedRecords:[]
+    };
+    // 加载已测成绩用于底部显示
+    const allRecs=await DB.getRecordsBySession(sessionId);
+    for(const r of allRecs){
+      for(const sid of (r.studentIds||[])){
+        State.batchFitness.testedRecords.push({studentId:sid,timeMs:r.timeMs,rank:r.rank});
+      }
+    }
+    Router.navigate('/timer/run');
   } else if(type==='countdown'||type==='input'){
     Countdown.reset();
     Router.navigate('/test/input');
@@ -1294,7 +1307,8 @@ async function resumeTest(sessionId){
    ============================================================ */
 async function renderTimerRun() {
   let groupName='快速计时',eventName='',students=[];
-  if(State.timerMode==='normal'){
+  const isBF=State.timerMode==='batch-fitness';
+  if(State.timerMode==='normal'||isBF){
     const g=await DB.get('groups',State.timerGroupId);
     const e=await DB.get('events',State.timerEventId);
     groupName=g?.name||''; eventName=e?.name||'';
@@ -1302,6 +1316,40 @@ async function renderTimerRun() {
     students.sort((a,b)=>a.number-b.number);
   }
   const isR=State.timerRunning, hasL=State.timerLaps.length>0, isS=!isR&&hasL, isI=!isR&&!hasL;
+
+  // batch-fitness 已测学生
+  let bfTestedHTML='';
+  if(isBF){
+    const BF=State.batchFitness;
+    const testedIds=new Set(BF.testedStudentIds);
+    const testedCount=testedIds.size;
+    const totalCount=students.length;
+    if(testedCount>0){
+      const donePercent=Math.round((testedCount/Math.max(totalCount,1))*100);
+      // 按成绩排序显示
+      const sortedRecs=[...BF.testedRecords].sort((a,b)=>a.timeMs-b.timeMs);
+      bfTestedHTML=`
+        <div class="progress-strip" style="margin-top:16px;">
+          <div class="ps-label">进度</div>
+          <div class="ps-bar"><div class="ps-fill" style="width:${donePercent}%;"></div></div>
+          <div class="ps-text">${testedCount}/${totalCount}</div>
+        </div>
+        <div class="tested-section">
+          <div class="tested-header">
+            <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
+            <div class="th-count">${testedCount} 人</div>
+          </div>
+          ${sortedRecs.map((rec,i)=>{
+            const s=students.find(x=>x.id===rec.studentId);
+            return `<div class="score-row done">
+              <span class="snum">${String(s?.number||0).padStart(2,'0')}</span>
+              <span class="sname">${s?.name||'未知'}</span>
+              <span class="score-val">${formatTime(rec.timeMs)}</span>
+            </div>`;}).join('')}
+        </div>`;
+    }
+  }
+
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="timer-header">
@@ -1315,6 +1363,7 @@ async function renderTimerRun() {
       </div>
       <div class="lap-list" id="lap-list">${renderLapList(students)}</div>
       <div class="timer-actions" id="timer-actions">${renderTimerBtns(isR,isS,isI)}</div>
+      ${bfTestedHTML}
     </div>`;
   if(isR) Timer._tick();
 }
@@ -1333,7 +1382,7 @@ function renderLapList(students) {
 function renderTimerBtns(isR,isS,isI) {
   if(isI) return `<button class="btn-start" onclick="doStart()">开始计时</button>`;
   if(isR) return `<button class="btn-stop" onclick="doStop()">停止</button><button class="btn-lap" onclick="doLap()">计次</button>`;
-  if(State.timerMode==='normal')
+  if(State.timerMode==='normal'||State.timerMode==='batch-fitness')
     return `<button class="btn-reset" onclick="doReset()">重置</button><button class="btn-archive" onclick="doArchive()">确认存档</button>`;
   return `<button class="btn-reset" onclick="doReset()">重置</button><button class="btn-lap" onclick="doResume()" style="flex:2">继续计时</button>`;
 }
@@ -1345,6 +1394,19 @@ function doLap(){Timer.lap();updateLapList();}
 function doReset(){Timer.reset();renderTimerRun();}
 
 async function exitTimer(){
+  if(State.timerMode==='batch-fitness'){
+    const BF=State.batchFitness;
+    if(State.timerRunning||State.timerLaps.length>0||BF.testedStudentIds.length>0){
+      const msg=BF.testedStudentIds.length>0?'已测试的数据会保存为"未完成"状态，之后可以继续。':'当前计时数据将丢失，确定退出吗？';
+      const ok=await showConfirm('退出测试',msg);if(!ok)return;
+      // 保存已有session为incomplete
+      if(BF.sessionId){
+        const session=await DB.get('sessions',BF.sessionId);
+        if(session){session.status='incomplete';session.testedStudentIds=BF.testedStudentIds;await DB.put('sessions',session);}
+      }
+    }
+    Timer.reset();Router.navigate('/');return;
+  }
   if(State.timerRunning||State.timerLaps.length>0){const ok=await showConfirm('退出计时','当前计时数据将丢失，确定退出吗？');if(!ok)return;}
   Timer.reset();Router.navigate('/');
 }
@@ -1372,10 +1434,12 @@ async function updateLapList(){
 }
 
 async function openStudentPicker(rank){
-  if(State.timerMode!=='normal')return;
+  if(State.timerMode!=='normal'&&State.timerMode!=='batch-fitness')return;
   const students=await DB.getStudentsByGroup(State.timerGroupId);
   students.sort((a,b)=>a.number-b.number);
   const assigned=new Set();State.timerLaps.forEach(l=>l.studentIds.forEach(id=>assigned.add(id)));
+  // batch-fitness模式下，已测学生也标记为不可选
+  const bfTested=State.timerMode==='batch-fitness'?new Set(State.batchFitness.testedStudentIds):new Set();
   const lap=State.timerLaps.find(l=>l.rank===rank);
   const cur=lap?lap.studentIds:[];
   document.getElementById('app').insertAdjacentHTML('beforeend',`
@@ -1383,12 +1447,15 @@ async function openStudentPicker(rank){
       <div class="modal-title">选择学生 · 第${rank}名</div>
       <div class="input-group"><input class="input" id="student-search" placeholder="输入编号或姓名搜索..." oninput="filterStudentList()" autofocus></div>
       <div id="student-list">${students.map(s=>{
-        const isA=assigned.has(s.id)&&!cur.includes(s.id), isC=cur.includes(s.id);
+        const isTested=bfTested.has(s.id);
+        const isA=(assigned.has(s.id)&&!cur.includes(s.id))||isTested;
+        const isC=cur.includes(s.id);
         return `<div class="student-picker-item" style="${isA?'opacity:0.4;':''} ${isC?'background:var(--accent-light);':''}"
           onclick="${isA?'':`pickStudent('${s.id}',${rank})`}">
           <span class="num">${String(s.number).padStart(2,'0')}</span><span>${s.name}</span>
           ${isC?'<span style="margin-left:auto;color:var(--accent);font-size:12px;">已选</span>':''}
-          ${isA?'<span style="margin-left:auto;font-size:11px;">已分配</span>':''}
+          ${isTested?'<span style="margin-left:auto;font-size:11px;color:var(--teal);">已测</span>':''}
+          ${isA&&!isTested?'<span style="margin-left:auto;font-size:11px;">已分配</span>':''}
         </div>`;}).join('')}</div>
     </div></div>`);
 }
@@ -1406,6 +1473,7 @@ async function pickStudent(sid,rank){
 }
 
 async function doArchive(){
+  if(State.timerMode==='batch-fitness') return doBatchFitnessArchive();
   if(State.timerMode!=='normal')return;
   const un=State.timerLaps.filter(l=>l.studentIds.length===0).length;
   if(un>0){const ok=await showConfirm('有未分配学号',`还有 ${un} 个名次未分配学号，确定存档吗？`);if(!ok)return;}
@@ -1415,6 +1483,76 @@ async function doArchive(){
     await DB.put('records',{id:uid(),sessionId:session.id,rank:lap.rank,timeMs:lap.timeMs,value:lap.timeMs,studentIds:lap.studentIds,createdAt:Date.now()});
   }
   Timer.reset();showToast('成绩已存档');Router.navigate('/results/'+session.id);
+}
+
+async function doBatchFitnessArchive(){
+  const BF=State.batchFitness;
+  const laps=State.timerLaps;
+  if(laps.length===0){showToast('没有计次记录');return;}
+
+  // 检查是否所有名次都分配了学号
+  const un=laps.filter(l=>l.studentIds.length===0).length;
+  if(un>0){const ok=await showConfirm('有未分配学号',`还有 ${un} 个名次未分配学号，确定存档吗？`);if(!ok)return;}
+
+  // 创建或获取session
+  if(!BF.sessionId){
+    const session={id:uid(),groupId:State.timerGroupId,eventId:State.timerEventId,date:Date.now(),status:'incomplete',customName:null,testedStudentIds:[],createdAt:Date.now()};
+    await DB.put('sessions',session);
+    BF.sessionId=session.id;
+  }
+
+  // 计算本轮已有记录数（用于rank偏移）
+  const existingRecs=await DB.getRecordsBySession(BF.sessionId);
+  const rankOffset=existingRecs.length;
+
+  // 保存每个lap的成绩
+  for(const lap of laps){
+    await DB.put('records',{
+      id:uid(),sessionId:BF.sessionId,rank:rankOffset+lap.rank,
+      timeMs:lap.timeMs,value:lap.timeMs,
+      studentIds:lap.studentIds,createdAt:Date.now()
+    });
+    // 记录已测学生
+    for(const sid of lap.studentIds){
+      if(!BF.testedStudentIds.includes(sid)){
+        BF.testedStudentIds.push(sid);
+        BF.testedRecords.push({studentId:sid,timeMs:lap.timeMs,rank:rankOffset+lap.rank});
+      }
+    }
+  }
+
+  // 更新session
+  const session=await DB.get('sessions',BF.sessionId);
+  session.testedStudentIds=BF.testedStudentIds;
+
+  // 检查是否全部测完
+  const allStudents=await DB.getStudentsByGroup(State.timerGroupId);
+  if(BF.testedStudentIds.length>=allStudents.length){
+    session.status='completed';
+    await DB.put('sessions',session);
+    // 重新计算所有记录的排名
+    const allRecs=await DB.getRecordsBySession(BF.sessionId);
+    const event=await DB.get('events',State.timerEventId);
+    allRecs.sort((a,b)=>compareValues(a.timeMs,b.timeMs,event?.rankOrder||'asc'));
+    for(let i=0;i<allRecs.length;i++){allRecs[i].rank=i+1;await DB.put('records',allRecs[i]);}
+    Timer.reset();
+    const g=await DB.get('groups',State.timerGroupId);
+    // 弹窗提示
+    document.getElementById('app').insertAdjacentHTML('beforeend',`
+      <div class="confirm-overlay" id="bf-done-dialog">
+        <div class="confirm-box">
+          <div class="title" style="font-size:20px;">🎉 测试完成</div>
+          <div class="msg" style="font-size:15px;">恭喜完成 <b>${g?.name||''}</b> 所有 <b>${event?.name||''}</b> 测试！</div>
+          <button class="btn btn-accent btn-sm" onclick="document.getElementById('bf-done-dialog').remove();Router.navigate('/results/${BF.sessionId}');">查看成绩</button>
+        </div>
+      </div>`);
+    return;
+  }
+
+  await DB.put('sessions',session);
+  showToast(`本轮 ${laps.length} 人成绩已保存`);
+  Timer.reset();
+  renderTimerRun();
 }
 
 /* ============================================================
