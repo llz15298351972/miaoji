@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>秒记 — 体育计时统计</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Barlow:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -52,8 +54,8 @@ body::before {
   pointer-events:none; z-index:0;
 }
 #app { height:100%; display:flex; flex-direction:column; position:relative; z-index:1; max-width:500px; margin:0 auto; }
-.page { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:16px 16px calc(var(--nav-height)+var(--safe-bottom)+16px); }
-.page.no-nav { padding-bottom:16px; }
+.page { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:24px; padding-bottom:calc(var(--nav-height)+var(--safe-bottom)+40px); }
+.page.no-nav { padding:24px; }
 
 /* 通用排版 */
 .page-header { margin-bottom:20px; }
@@ -222,7 +224,7 @@ body::before {
 
 /* 弹窗 */
 .modal-overlay { position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(26,26,46,0.4); backdrop-filter:blur(4px); z-index:200; display:flex; align-items:flex-end; justify-content:center; }
-.modal { background:var(--bg-card); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:500px; max-height:80vh; overflow-y:auto; padding:24px 20px calc(20px + var(--safe-bottom)); box-shadow:0 -10px 40px rgba(26,26,46,0.15); animation:slideUp 0.25s ease-out; }
+.modal { background:var(--bg-card); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:500px; max-height:80vh; overflow-y:auto; padding:28px 24px calc(24px + var(--safe-bottom)); box-shadow:0 -10px 40px rgba(26,26,46,0.15); animation:slideUp 0.25s ease-out; }
 @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
 .modal-title { font-family:'Outfit',sans-serif; font-size:20px; font-weight:700; margin-bottom:16px; }
 
@@ -252,9 +254,14 @@ body::before {
 .color-dot.active { border-color:var(--text-primary); }
 
 /* 子标签页 */
-.sub-tabs { display:flex; gap:0; margin-bottom:16px; background:var(--bg-subtle); border-radius:var(--radius-sm); padding:3px; }
-.sub-tab { flex:1; padding:8px; text-align:center; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; color:var(--text-muted); transition:all 0.15s; }
-.sub-tab.active { background:var(--bg-card); color:var(--text-primary); box-shadow:var(--shadow-sm); }
+.sub-tabs { display:flex; gap:0; background:var(--bg-subtle); border-radius:12px; padding:3px; }
+.sub-tab {
+  flex:1; padding:9px 8px; text-align:center; border-radius:10px;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:700;
+  cursor:pointer; color:var(--text-muted); transition:all 0.2s;
+  letter-spacing:-0.1px;
+}
+.sub-tab.active { background:var(--bg-card); color:var(--text-primary); box-shadow:0 1px 4px rgba(26,26,46,0.08), 0 1px 2px rgba(26,26,46,0.04); }
 
 /* 倒计时器 */
 .countdown-display { text-align:center; padding:20px 0; }
@@ -262,15 +269,88 @@ body::before {
 .countdown-time.warning { color:var(--danger); }
 .countdown-time.done { color:var(--teal); }
 
-/* 成绩输入行 */
-.score-row { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg); border-radius:var(--radius-sm); margin-bottom:5px; }
-.score-row .snum { font-family:'Barlow',sans-serif; font-weight:600; color:var(--accent); width:28px; font-variant-numeric:tabular-nums; }
-.score-row .sname { font-size:14px; font-weight:500; flex:1; min-width:0; }
-.score-row .score-input { width:80px; padding:6px 10px; border:1.5px solid var(--bg-subtle); border-radius:8px; font-family:'Barlow',sans-serif; font-size:15px; text-align:center; outline:none; font-variant-numeric:tabular-nums; }
-.score-row .score-input:focus { border-color:var(--accent); }
-.score-row .score-unit { font-size:11px; color:var(--text-muted); width:24px; }
-.score-row.done { opacity:0.5; }
-.score-row .score-val { font-family:'Barlow',sans-serif; font-size:15px; font-weight:600; color:var(--teal); font-variant-numeric:tabular-nums; }
+/* ============================================================
+   成绩输入行 — 卡片化设计
+   ============================================================ */
+.score-row {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px; background:var(--bg-card); border-radius:12px;
+  margin-bottom:6px; border:1.5px solid rgba(26,26,46,0.05);
+  box-shadow:0 1px 3px rgba(26,26,46,0.03);
+  transition:all 0.2s;
+}
+.score-row .snum {
+  font-family:'Barlow',sans-serif; font-weight:700; color:white;
+  width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-variant-numeric:tabular-nums; flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),#FF8F5E);
+}
+.score-row .sname { font-size:14px; font-weight:600; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.score-row .score-input {
+  width:80px; padding:8px 10px; border:2px solid var(--bg-subtle); border-radius:10px;
+  font-family:'Barlow',sans-serif; font-size:16px; font-weight:600; text-align:center;
+  outline:none; font-variant-numeric:tabular-nums; background:var(--bg);
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.score-row .score-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,107,53,0.12); }
+.score-row .score-input.filled { border-color:var(--teal); background:var(--teal-light); }
+.score-row .score-unit { font-size:11px; color:var(--text-muted); width:26px; font-weight:600; }
+
+/* 已测完状态 */
+.score-row.done {
+  background:var(--bg); border-color:transparent; box-shadow:none;
+  padding:10px 14px;
+}
+.score-row.done .snum {
+  background:var(--teal); font-size:11px;
+}
+.score-row.done .sname { color:var(--text-muted); font-weight:500; }
+.score-row .score-val {
+  font-family:'Barlow',sans-serif; font-size:15px; font-weight:700;
+  color:var(--teal); font-variant-numeric:tabular-nums;
+}
+.score-row .done-check {
+  width:20px; height:20px; border-radius:50%; background:var(--teal);
+  display:flex; align-items:center; justify-content:center;
+  color:white; font-size:11px; flex-shrink:0;
+}
+
+/* 已测区域 */
+.tested-section {
+  margin-top:20px; padding-top:16px;
+  border-top:2px solid var(--bg-subtle); border-radius:0;
+}
+.tested-header {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+}
+.tested-header .th-label {
+  font-family:'Outfit',sans-serif; font-size:12px; font-weight:700;
+  color:var(--teal); letter-spacing:0.5px; display:flex; align-items:center; gap:6px;
+}
+.tested-header .th-count {
+  font-size:11px; color:var(--text-muted); font-weight:600;
+}
+
+/* 进度条 */
+.progress-strip {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; background:var(--bg-card); border-radius:10px;
+  margin-bottom:16px; box-shadow:var(--shadow-sm);
+}
+.progress-strip .ps-bar {
+  flex:1; height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;
+}
+.progress-strip .ps-fill {
+  height:100%; border-radius:3px; transition:width 0.4s ease;
+  background:linear-gradient(90deg,var(--teal),#24B5A5);
+}
+.progress-strip .ps-text {
+  font-family:'Barlow',sans-serif; font-size:13px; font-weight:700;
+  color:var(--teal); font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.progress-strip .ps-label {
+  font-size:11px; color:var(--text-muted); font-weight:500; white-space:nowrap;
+}
 
 /* 学生多选 */
 .student-check { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border-radius:var(--radius-sm); margin-bottom:4px; cursor:pointer; border:1.5px solid transparent; transition:all 0.15s; }
@@ -307,6 +387,238 @@ body::before {
     font-family:'Barlow',sans-serif; font-variant-numeric:tabular-nums;
   }
 }
+
+/* ============================================================
+   首页大卡片
+   ============================================================ */
+.home-hero { margin-bottom:20px; }
+.home-card {
+  background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow-md);
+  padding:22px 20px; border:1px solid rgba(26,26,46,0.04); margin-bottom:12px;
+  cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
+}
+.home-card:active { transform:scale(0.98); }
+.home-card .hc-icon { font-size:36px; margin-bottom:10px; }
+.home-card .hc-title { font-family:'Outfit',sans-serif; font-size:18px; font-weight:800; margin-bottom:4px; letter-spacing:-0.2px; }
+.home-card .hc-desc { font-size:12px; color:var(--text-muted); line-height:1.6; }
+.home-card.primary {
+  background:linear-gradient(135deg,#FF6B35 0%,#FF8F5E 50%,#FFB088 100%);
+  color:white; border:none;
+  box-shadow:0 8px 28px rgba(255,107,53,0.3), 0 2px 8px rgba(255,107,53,0.15);
+}
+.home-card.primary .hc-desc { color:rgba(255,255,255,0.8); }
+.home-card.primary::after {
+  content:''; position:absolute; top:-30px; right:-30px;
+  width:100px; height:100px; border-radius:50%;
+  background:rgba(255,255,255,0.1);
+}
+.home-card.secondary {
+  background:linear-gradient(135deg,var(--teal),#24B5A5);
+  color:white; border:none;
+  box-shadow:0 6px 22px rgba(27,153,139,0.25);
+}
+.home-card.secondary .hc-desc { color:rgba(255,255,255,0.85); }
+.home-card.secondary::after {
+  content:''; position:absolute; bottom:-20px; left:-20px;
+  width:80px; height:80px; border-radius:50%;
+  background:rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   奖牌排名行
+   ============================================================ */
+.rank-item.medal { position:relative; padding:13px 14px; }
+.rank-medal {
+  width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:800; color:white; flex-shrink:0;
+}
+.rank-medal.gold { background:linear-gradient(145deg,#F7D547,#E8A317); box-shadow:0 2px 8px rgba(232,163,23,0.35); }
+.rank-medal.silver { background:linear-gradient(145deg,#C4CDD8,#8E9AAF); box-shadow:0 2px 8px rgba(142,154,175,0.3); }
+.rank-medal.bronze { background:linear-gradient(145deg,#DDA06A,#C17F4E); box-shadow:0 2px 8px rgba(193,127,78,0.3); }
+.rank-item.gold-bg { background:linear-gradient(90deg,rgba(247,213,71,0.1),transparent); border-radius:var(--radius-sm); }
+.rank-item.silver-bg { background:linear-gradient(90deg,rgba(142,154,175,0.08),transparent); border-radius:var(--radius-sm); }
+.rank-item.bronze-bg { background:linear-gradient(90deg,rgba(193,127,78,0.08),transparent); border-radius:var(--radius-sm); }
+
+/* ============================================================
+   紧凑筛选栏
+   ============================================================ */
+.filter-bar-compact { display:flex; gap:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; scrollbar-width:none; }
+.filter-bar-compact::-webkit-scrollbar { display:none; }
+.filter-section { display:flex; gap:5px; flex-shrink:0; align-items:center; }
+.filter-section::after { content:''; width:1px; height:16px; background:var(--bg-subtle); margin:0 4px; flex-shrink:0; }
+.filter-section:last-child::after { display:none; }
+.filter-bar-compact .filter-chip { white-space:nowrap; flex-shrink:0; padding:4px 10px; font-size:11px; }
+
+/* ============================================================
+   重命名按钮（文字版）
+   ============================================================ */
+.rename-btn {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:12px; color:var(--accent); font-weight:600;
+  cursor:pointer; padding:4px 10px; border-radius:var(--radius-xs);
+  border:1px solid var(--accent); background:var(--accent-light);
+  transition:all 0.15s; margin-left:6px;
+}
+.rename-btn:active { transform:scale(0.95); }
+.rename-btn svg { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2; }
+
+/* ============================================================
+   分组选择页
+   ============================================================ */
+.group-select-card {
+  display:flex; align-items:center; padding:16px; background:var(--bg-card);
+  border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer;
+  transition:all 0.15s; gap:14px; box-shadow:var(--shadow-sm);
+  border:2px solid transparent;
+}
+.group-select-card:active { border-color:var(--accent); background:var(--accent-light); }
+.group-select-card .gs-avatar {
+  width:46px; height:46px; border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Outfit',sans-serif; font-weight:800; font-size:15px; color:white;
+}
+.group-select-card .gs-info { flex:1; }
+.group-select-card .gs-name { font-family:'Outfit',sans-serif; font-size:16px; font-weight:700; }
+.group-select-card .gs-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.group-select-card .gs-arrow { color:var(--text-muted); font-size:16px; }
+
+/* 新建分组内联卡片 */
+.inline-create-group {
+  background:var(--bg-card); border-radius:var(--radius); padding:20px;
+  box-shadow:var(--shadow-sm); border:1.5px dashed var(--bg-subtle); margin-top:16px;
+}
+.inline-create-group .icg-title { font-family:'Outfit',sans-serif; font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text-secondary); }
+
+/* ============================================================
+   记录页 — 筛选下拉
+   ============================================================ */
+.filter-row { display:flex; gap:8px; margin-bottom:18px; }
+.filter-dropdown { flex:1; position:relative; }
+.filter-dropdown-btn {
+  display:flex; align-items:center; justify-content:space-between; gap:4px;
+  width:100%; padding:0; border-radius:10px;
+  background:var(--bg-card); border:1.5px solid var(--bg-subtle);
+  font-family:'Outfit',sans-serif; cursor:pointer; transition:all 0.2s;
+  box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.filter-dropdown-btn:active { transform:scale(0.97); }
+.filter-dropdown-btn .dd-text {
+  display:flex; flex-direction:column; padding:8px 0 8px 12px; flex:1; min-width:0;
+}
+.filter-dropdown-btn .dd-label {
+  font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--text-muted); line-height:1; margin-bottom:3px;
+}
+.filter-dropdown-btn .dd-val {
+  font-size:14px; font-weight:800; color:var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.filter-dropdown-btn .dd-arrow-wrap {
+  width:32px; display:flex; align-items:center; justify-content:center;
+  background:var(--bg); border-left:1px solid var(--bg-subtle);
+  align-self:stretch; flex-shrink:0; transition:all 0.2s;
+}
+.filter-dropdown-btn .dd-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; }
+.filter-dropdown-btn.open { border-color:var(--accent); }
+.filter-dropdown-btn.open .dd-arrow-wrap { background:var(--accent); border-color:var(--accent); }
+.filter-dropdown-btn.open .dd-arrow { transform:rotate(180deg); color:white; }
+.filter-dropdown-menu {
+  position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:50;
+  background:var(--bg-card); border-radius:12px;
+  box-shadow:0 12px 40px rgba(26,26,46,0.14), 0 2px 8px rgba(26,26,46,0.06);
+  border:1px solid rgba(26,26,46,0.05);
+  max-height:260px; overflow-y:auto; display:none;
+  animation:dropIn 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.filter-dropdown-menu.show { display:block; }
+@keyframes dropIn { from{opacity:0;transform:translateY(-8px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+.dd-option {
+  padding:11px 14px; font-size:13px; font-weight:500; cursor:pointer;
+  transition:all 0.1s; display:flex; align-items:center; gap:10px;
+  color:var(--text-secondary);
+}
+.dd-option:active { background:var(--accent-light); }
+.dd-option.active { color:var(--accent); font-weight:700; }
+.dd-option .dd-check {
+  width:18px; height:18px; border-radius:50%; border:2px solid var(--bg-subtle);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-size:10px; transition:all 0.15s;
+}
+.dd-option.active .dd-check { background:var(--accent); border-color:var(--accent); color:white; }
+.dd-option:not(:last-child) { border-bottom:1px solid rgba(237,232,226,0.35); }
+
+/* ============================================================
+   记录页 — 历史记录卡片（色带风格）
+   ============================================================ */
+.history-card {
+  position:relative; background:var(--bg-card); border-radius:14px;
+  padding:14px 14px 14px 18px; margin-bottom:10px;
+  box-shadow:0 2px 8px rgba(26,26,46,0.04);
+  border:1px solid rgba(26,26,46,0.04);
+  display:flex; align-items:center; gap:12px;
+  transition:all 0.15s; cursor:pointer; overflow:hidden;
+}
+.history-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:var(--card-accent, var(--accent)); border-radius:14px 0 0 14px;
+}
+.history-card:active { transform:scale(0.985); }
+.history-card .hc-left {
+  width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0; background:var(--bg);
+}
+.history-card .hc-body { flex:1; min-width:0; }
+.history-card .hc-name {
+  font-family:'Outfit',sans-serif; font-size:14px; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:var(--text-primary);
+}
+.history-card .hc-meta {
+  display:flex; align-items:center; gap:0; margin-top:4px;
+  font-size:11px; color:var(--text-muted); font-weight:500;
+}
+.history-card .hc-meta span { display:inline-flex; align-items:center; }
+.history-card .hc-meta .sep { margin:0 5px; opacity:0.4; }
+.history-card .hc-actions { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+
+/* 重命名小按钮 */
+.list-rename-btn {
+  display:flex; align-items:center; justify-content:center;
+  width:32px; height:32px; border-radius:8px;
+  border:none; background:transparent;
+  color:var(--text-muted); cursor:pointer; flex-shrink:0;
+  transition:all 0.15s;
+}
+.list-rename-btn:active { background:var(--accent-light); color:var(--accent); }
+.list-rename-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; }
+
+/* ============================================================
+   记录页 — 排名入口（赛事板风格）
+   ============================================================ */
+.rankings-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ranking-entry {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:18px 12px 14px; background:var(--bg-card); border-radius:14px;
+  box-shadow:0 2px 8px rgba(26,26,46,0.04); border:1px solid rgba(26,26,46,0.04);
+  cursor:pointer; transition:all 0.2s; text-align:center; position:relative; overflow:hidden;
+}
+.ranking-entry:active { transform:scale(0.96); }
+.ranking-entry::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:var(--entry-accent, var(--accent)); opacity:0.7;
+}
+.ranking-entry .re-icon {
+  font-size:28px; width:48px; height:48px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bg);
+}
+.ranking-entry .re-name { font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; color:var(--text-primary); }
+.ranking-entry .re-tag {
+  font-size:9px; font-weight:700; padding:2px 8px; border-radius:4px;
+  letter-spacing:0.5px; text-transform:uppercase;
+}
+.ranking-entry .re-tag.training { background:var(--accent-light); color:var(--accent); }
+.ranking-entry .re-tag.fitness { background:var(--teal-light); color:var(--teal); }
 </style>
 </head>
 <body>
@@ -350,8 +662,8 @@ const EVENT_EMOJIS = {
   '50米':'⚡','60米':'💨','100米':'🏃','200米':'🔥',
   '50×8':'🔄','400米':'🌀','800米':'🏅','1000米':'💪',
   '1500米':'🎯','3000米':'🏔️','5000米':'🌟','10000米':'🏆',
-  '一分钟仰卧起坐':'🏋️','一分钟跳绳':'🪢',
-  '坐位体前屈':'🤸','肺活量':'🫁',
+  '一分钟仰卧起坐（体测）':'🏋️','一分钟跳绳（体测）':'🪢',
+  '坐位体前屈（体测）':'🤸','肺活量（体测）':'🫁',
   '50米（体测）':'⚡','50×8（体测）':'🔄',
   '800米（体测）':'🏅','1000米（体测）':'💪',
 };
@@ -364,10 +676,10 @@ const PRESET_EVENTS = [
 ];
 
 const PRESET_EVENTS_V2 = [
-  {name:'一分钟仰卧起坐',sortOrder:13,type:'countdown',unit:'count',rankOrder:'desc',countdownSeconds:60,exportFormat:'raw',category:'fitness'},
-  {name:'一分钟跳绳',sortOrder:14,type:'countdown',unit:'count',rankOrder:'desc',countdownSeconds:60,exportFormat:'raw',category:'fitness'},
-  {name:'坐位体前屈',sortOrder:15,type:'input',unit:'cm',rankOrder:'desc',countdownSeconds:null,exportFormat:'raw',category:'fitness'},
-  {name:'肺活量',sortOrder:16,type:'input',unit:'ml',rankOrder:'desc',countdownSeconds:null,exportFormat:'raw',category:'fitness'},
+  {name:'一分钟仰卧起坐（体测）',sortOrder:13,type:'countdown',unit:'count',rankOrder:'desc',countdownSeconds:60,exportFormat:'raw',category:'fitness'},
+  {name:'一分钟跳绳（体测）',sortOrder:14,type:'countdown',unit:'count',rankOrder:'desc',countdownSeconds:60,exportFormat:'raw',category:'fitness'},
+  {name:'坐位体前屈（体测）',sortOrder:15,type:'input',unit:'cm',rankOrder:'desc',countdownSeconds:null,exportFormat:'raw',category:'fitness'},
+  {name:'肺活量（体测）',sortOrder:16,type:'input',unit:'ml',rankOrder:'desc',countdownSeconds:null,exportFormat:'raw',category:'fitness'},
   {name:'50米（体测）',sortOrder:17,type:'batch-timing',unit:'ms',rankOrder:'asc',countdownSeconds:null,exportFormat:'s',category:'fitness'},
   {name:'50×8（体测）',sortOrder:18,type:'batch-timing',unit:'ms',rankOrder:'asc',countdownSeconds:null,exportFormat:'mmss',category:'fitness'},
   {name:'800米（体测）',sortOrder:19,type:'batch-timing',unit:'ms',rankOrder:'asc',countdownSeconds:null,exportFormat:'mmss',category:'fitness'},
@@ -567,6 +879,16 @@ const DB = {
     localStorage.setItem('mj_migrated_v2','1');
   },
 
+  async renameFitnessEvents(){
+    if(localStorage.getItem('mj_renamed_fitness')) return;
+    const renames={'一分钟仰卧起坐':'一分钟仰卧起坐（体测）','一分钟跳绳':'一分钟跳绳（体测）','坐位体前屈':'坐位体前屈（体测）','肺活量':'肺活量（体测）'};
+    const events=await this.getAll('events');
+    for(const ev of events){
+      if(renames[ev.name]){ev.name=renames[ev.name];await this.put('events',ev);}
+    }
+    localStorage.setItem('mj_renamed_fitness','1');
+  },
+
   async restoreFromBackup(){
     const stores=['groups','students','events','sessions','records'];
     for(const s of stores){
@@ -754,13 +1076,21 @@ async function renderHome() {
     <div class="page">
       <div class="page-header">
         <div class="page-title">秒记</div>
-        <div class="page-subtitle">选择分组和项目开始计时</div>
+        <div class="page-subtitle">体育计时统计工具</div>
       </div>
-      <div class="setup-card highlight" onclick="startQuickTimer()">
-        <div class="sc-title">⏱ 快速计时</div>
-        <div class="sc-desc">不选分组，纯秒表 + 计次，数据不保存</div>
+      <div class="home-hero">
+        <div class="home-card primary" onclick="startQuickTimer()">
+          <div class="hc-icon">&#9201;</div>
+          <div class="hc-title">傻瓜计时器</div>
+          <div class="hc-desc">不选分组，纯秒表 + 计次，数据不保存</div>
+        </div>
+        <div class="home-card secondary" onclick="Router.navigate('/timer/event')">
+          <div class="hc-icon">&#127942;</div>
+          <div class="hc-title">开始测试</div>
+          <div class="hc-desc">选择运动项目，记录成绩并生成排名</div>
+        </div>
       </div>
-      ${incomplete.length?`<div class="section-label" style="margin-top:16px;">⚠️ 未完成的测试</div>
+      ${incomplete.length?`<div class="section-label">&#9888;&#65039; 未完成的测试</div>
         ${incomplete.map(s=>{
           const g=groups.find(x=>x.id===s.groupId);
           const e=allEvents.find(x=>x.id===s.eventId);
@@ -769,44 +1099,124 @@ async function renderHome() {
             <div class="info"><div class="name">${g?.name||'未知'} · ${e?.name||'未知'}</div><div class="meta">${formatDate(s.date)} <span class="status-tag incomplete">未完成</span></div></div>
             <div class="arrow">&#10095;</div>
           </div>`;}).join('')}`:''}
-      <div class="section-label" style="margin-top:20px;">选择分组开始正式测试</div>
-      ${groups.map(g=>`
-        <div class="list-item" onclick="selectGroup('${g.id}')">
-          <div class="avatar" style="background:${g.color||'#1B998B'};">${g.name.slice(0,1)}</div>
-          <div class="info"><div class="name">${g.name}</div></div>
-          <div class="arrow">&#10095;</div>
-        </div>`).join('')}
     </div>${renderNav('timer')}`;
 }
 
-async function selectGroup(gid){State.timerGroupId=gid;Router.navigate('/timer/event');}
+async function selectGroup(gid){State.timerGroupId=gid;Router.navigate('/timer/group');}
 
 async function renderEventSelect() {
   const events=await DB.getVisibleEvents();
-  const group=await DB.get('groups',State.timerGroupId);
-  if(!group){Router.navigate('/');return;}
   const standard=events.filter(e=>(e.category||'standard')==='standard');
   const fitness=events.filter(e=>e.category==='fitness');
 
   document.getElementById('app').innerHTML=`
     <div class="page">
-      <div class="topbar"><button class="back" onclick="Router.navigate('/')">&larr;</button><div class="title">选择项目</div></div>
-      <div class="page-subtitle" style="margin-bottom:16px;">分组：${group.name}</div>
-      ${standard.length?`<div class="section-label">常规训练项目</div>
-      ${standard.map(ev=>`
-        <div class="list-item" onclick="startTest('${ev.id}')">
-          <div class="emoji-icon">${getEventEmoji(ev.name)}</div>
-          <div class="info"><div class="name">${ev.name}</div></div>
-          <div class="arrow">&#10095;</div>
-        </div>`).join('')}`:''}
-      ${fitness.length?`<div class="section-label" style="margin-top:16px;">体测项目</div>
+      <div class="topbar"><button class="back" onclick="Router.navigate('/')">&larr;</button><div class="title">选择测试项目</div></div>
+      <div class="page-subtitle" style="margin-bottom:16px;">选好项目后再选分组</div>
+      ${fitness.length?`<div class="section-label">体测项目</div>
       ${fitness.map(ev=>`
-        <div class="list-item" onclick="startTest('${ev.id}')">
+        <div class="list-item" onclick="selectEventThenGroup('${ev.id}')">
           <div class="emoji-icon">${getEventEmoji(ev.name)}</div>
           <div class="info"><div class="name">${ev.name}</div><div class="meta">${ev.type==='countdown'?'倒计时+输入':ev.type==='input'?'直接输入':'分批计时'}</div></div>
           <div class="arrow">&#10095;</div>
         </div>`).join('')}`:''}
+      ${standard.length?`<div class="section-label" style="margin-top:16px;">常规训练项目</div>
+      ${standard.map(ev=>`
+        <div class="list-item" onclick="selectEventThenGroup('${ev.id}')">
+          <div class="emoji-icon">${getEventEmoji(ev.name)}</div>
+          <div class="info"><div class="name">${ev.name}</div></div>
+          <div class="arrow">&#10095;</div>
+        </div>`).join('')}`:''}
     </div>${renderNav('timer')}`;
+}
+
+function selectEventThenGroup(eid){
+  State.timerEventId=eid;
+  Router.navigate('/timer/group');
+}
+
+async function renderGroupSelect(){
+  const groups=await DB.getAll('groups');
+  const event=await DB.get('events',State.timerEventId);
+  if(!event){Router.navigate('/timer/event');return;}
+  // 统计每组学生数
+  const allStudents=await DB.getAll('students');
+  const countByGroup={};
+  for(const s of allStudents){countByGroup[s.groupId]=(countByGroup[s.groupId]||0)+1;}
+  const color=GROUP_COLORS[Math.floor(Math.random()*GROUP_COLORS.length)];
+
+  document.getElementById('app').innerHTML=`
+    <div class="page">
+      <div class="topbar"><button class="back" onclick="Router.navigate('/timer/event')">&larr;</button><div class="title">选择分组</div></div>
+      <div class="page-subtitle" style="margin-bottom:16px;">项目：${event.name}</div>
+      ${groups.length?groups.map(g=>`
+        <div class="group-select-card" onclick="selectGroupAndStart('${g.id}')">
+          <div class="gs-avatar" style="background:${g.color||'#1B998B'};">${g.name.slice(0,1)}</div>
+          <div class="gs-info">
+            <div class="gs-name">${g.name}</div>
+            <div class="gs-meta">${countByGroup[g.id]||0} 名学生</div>
+          </div>
+          <div class="gs-arrow">&#10095;</div>
+        </div>`).join(''):`<div class="empty-state" style="padding:20px 0;"><div class="title">还没有分组</div><div class="desc">先创建一个分组再开始测试</div></div>`}
+      <div class="inline-create-group">
+        <div class="icg-title">+ 新建分组</div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:14px;">分组是你管理学生的方式。一个分组可以是一个班级、训练队、社团等。创建分组后就可以开始测试了。</p>
+        <div class="input-group"><label>分组名称（如：三年级二班、跳绳社团、田径队）</label><input class="input" id="quick-group-name" placeholder="输入分组名称"></div>
+        <div class="input-group"><label>选择颜色</label>
+          <div class="color-dots">${GROUP_COLORS.map(c=>`<div class="color-dot ${c===color?'active':''}" style="background:${c};" onclick="pickColor(this,'${c}')"></div>`).join('')}</div>
+          <input type="hidden" id="new-group-color" value="${color}">
+        </div>
+        <div class="input-group">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);margin:0;">学生信息（每行：编号 姓名）</label>
+            <input type="file" id="quick-excel-file" accept=".xlsx,.xls,.csv" style="position:absolute;left:-9999px;opacity:0;" onchange="handleQuickExcelImport()">
+            <button type="button" onclick="document.getElementById('quick-excel-file').click()" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;background:var(--accent-light);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;">&#128196; 上传Excel</button>
+          </div>
+          <textarea class="input" id="quick-students" rows="5" placeholder="1 张三&#10;2 李四&#10;3 王五&#10;&#10;支持直接粘贴，也可上传Excel（第一列编号，第二列姓名）" style="resize:vertical;font-family:Barlow,'DM Sans',sans-serif;font-size:13px;"></textarea>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin:-8px 0 14px;">学生信息也可以稍后在分组管理中添加</p>
+        <button class="btn btn-accent" onclick="createGroupAndStart()">创建并开始测试</button>
+      </div>
+      <div style="height:80px;flex-shrink:0;" aria-hidden="true"></div>
+    </div>${renderNav('timer')}`;
+}
+
+async function selectGroupAndStart(gid){
+  State.timerGroupId=gid;
+  startTest(State.timerEventId);
+}
+
+async function handleQuickExcelImport(){
+  const file=document.getElementById('quick-excel-file')?.files?.[0];if(!file)return;
+  if(file.name.endsWith('.csv')){
+    const text=await file.text();
+    document.getElementById('quick-students').value=text.split(/\r?\n/).filter(l=>l.trim()).map(l=>{const p=l.split(/[,\t]/);return`${p[0]?.trim()} ${p[1]?.trim()}`;}).filter(l=>l.trim()!==' ').join('\n');
+    showToast('CSV 已解析');return;
+  }
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+    document.getElementById('quick-students').value=rows.filter(r=>r[0]!=null&&r[1]!=null).map(r=>`${r[0]} ${r[1]}`).join('\n');
+    showToast('Excel 已解析');
+  }catch(e){showToast('Excel 解析失败');}
+}
+
+async function createGroupAndStart(){
+  const name=document.getElementById('quick-group-name')?.value?.trim();
+  if(!name){showToast('请输入分组名称');return;}
+  const color=document.getElementById('new-group-color')?.value||GROUP_COLORS[0];
+  const g={id:uid(),name,color,createdAt:Date.now(),updatedAt:Date.now()};
+  await DB.put('groups',g);
+  // 导入学生信息
+  const text=document.getElementById('quick-students')?.value?.trim();
+  let studentCount=0;
+  if(text){for(const line of text.split(/\n/).filter(l=>l.trim())){
+    const m=line.trim().match(/^(\d+)\s+(.+)/);
+    if(m){await DB.put('students',{id:uid(),groupId:g.id,number:parseInt(m[1]),name:m[2].trim(),createdAt:Date.now(),updatedAt:Date.now()});studentCount++;}
+  }}
+  showToast(studentCount?`已创建分组并导入 ${studentCount} 名学生`:'分组已创建');
+  State.timerGroupId=g.id;
+  startTest(State.timerEventId);
 }
 
 async function startTest(eid){
@@ -1089,17 +1499,21 @@ async function renderCountdownTest(){
         <div class="section-label" style="margin-top:16px;">输入成绩</div>
         ${selected.map(s=>{
           const val=B.inputValues[s.id];
+          const hasFilled=val!=null&&val!=='';
           return `<div class="score-row">
             <span class="snum">${String(s.number).padStart(2,'0')}</span>
             <span class="sname">${s.name}</span>
-            <input class="score-input" type="number" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value)">
+            <input class="score-input ${hasFilled?'filled':''}" type="number" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value);this.classList.toggle('filled',!!this.value)">
             <span class="score-unit">${getUnitLabel(event)}</span>
           </div>`;}).join('')}
         <button class="btn btn-teal" style="margin-top:12px;" onclick="saveBatchScores()">保存本轮成绩</button>
       `:''}
 
       ${testedStudents.length?`<div class="tested-section">
-        <div class="section-label">✅ 已测完 (${testedStudents.length}人)</div>
+        <div class="tested-header">
+          <div class="th-label"><span class="done-check" style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
+          <div class="th-count">${testedStudents.length} 人</div>
+        </div>
         ${testedStudents.map(s=>`<div class="score-row done">
           <span class="snum">${String(s.number).padStart(2,'0')}</span>
           <span class="sname">${s.name}</span>
@@ -1135,6 +1549,11 @@ async function renderInputTest(){
   const students=await DB.getStudentsByGroup(B.groupId);
   students.sort((a,b)=>a.number-b.number);
 
+  const testedCount=B.testedStudentIds.length;
+  const filledCount=students.filter(s=>B.inputValues[s.id]!=null&&!B.testedStudentIds.includes(s.id)).length;
+  const totalCount=students.length;
+  const donePercent=Math.round((testedCount/Math.max(totalCount,1))*100);
+
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="topbar">
@@ -1142,17 +1561,37 @@ async function renderInputTest(){
         <div class="title">${getEventEmoji(event?.name||'')} ${event?.name||''}</div>
       </div>
       <div class="page-subtitle" style="margin-bottom:12px;">${group?.name||''} · 输入成绩</div>
-      ${students.map(s=>{
+
+      <div class="progress-strip">
+        <div class="ps-label">进度</div>
+        <div class="ps-bar"><div class="ps-fill" style="width:${donePercent}%;"></div></div>
+        <div class="ps-text">${testedCount}/${totalCount}</div>
+      </div>
+
+      ${students.filter(s=>!B.testedStudentIds.includes(s.id)).map(s=>{
         const val=B.inputValues[s.id];
-        const done=B.testedStudentIds.includes(s.id);
-        return `<div class="score-row ${done?'done':''}">
+        const hasFilled=val!=null&&val!=='';
+        return `<div class="score-row">
           <span class="snum">${String(s.number).padStart(2,'0')}</span>
           <span class="sname">${s.name}</span>
-          ${done?`<span class="score-val">${val!=null?val+getUnitLabel(event):'--'}</span>`
-          :`<input class="score-input" type="number" step="any" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value)">
-            <span class="score-unit">${getUnitLabel(event)}</span>`}
+          <input class="score-input ${hasFilled?'filled':''}" type="number" step="any" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value);this.classList.toggle('filled',!!this.value)">
+          <span class="score-unit">${getUnitLabel(event)}</span>
         </div>`;}).join('')}
-      <button class="btn btn-teal" style="margin-top:16px;" onclick="saveBatchScores()">保存已填成绩</button>
+      <button class="btn btn-teal" style="margin-top:16px;" onclick="saveBatchScores()">保存已填成绩${filledCount?' ('+filledCount+'人)':''}</button>
+
+      ${testedCount?`<div class="tested-section">
+        <div class="tested-header">
+          <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
+          <div class="th-count">${testedCount} 人</div>
+        </div>
+        ${students.filter(s=>B.testedStudentIds.includes(s.id)).map(s=>{
+          const val=B.inputValues[s.id];
+          return `<div class="score-row done">
+            <span class="snum">${String(s.number).padStart(2,'0')}</span>
+            <span class="sname">${s.name}</span>
+            <span class="score-val">${val!=null?val+getUnitLabel(event):'--'}</span>
+          </div>`;}).join('')}
+      </div>`:''}
     </div>`;
 }
 
@@ -1188,18 +1627,28 @@ async function renderBatchTimingTest(){
         :`<button class="btn-stop" style="flex:1;" onclick="BatchTimer.stop();renderBatchTimingTest();">停止</button>`}
       </div>
 
-      <div class="section-label">本轮测试学生 · 输入成绩</div>
+      ${testedStudents.length||selected.length?`<div class="progress-strip">
+        <div class="ps-label">进度</div>
+        <div class="ps-bar"><div class="ps-fill" style="width:${Math.round(testedStudents.length/Math.max(students.length,1)*100)}%;"></div></div>
+        <div class="ps-text">${testedStudents.length}/${students.length}</div>
+      </div>`:''}
+
+      <div class="section-label">本轮测试 · 输入成绩</div>
       ${selected.map(s=>{
         const val=B.inputValues[s.id];
+        const hasFilled=val!=null;
         return `<div class="score-row">
           <span class="snum">${String(s.number).padStart(2,'0')}</span>
           <span class="sname">${s.name}</span>
-          <input class="score-input" type="text" id="score-${s.id}" value="${val!=null?formatTime(val):''}" placeholder="mm:ss.cc" onchange="updateBatchTimingScore('${s.id}',this.value)">
+          <input class="score-input ${hasFilled?'filled':''}" type="text" id="score-${s.id}" value="${val!=null?formatTime(val):''}" placeholder="0:00.00" onchange="updateBatchTimingScore('${s.id}',this.value);this.classList.toggle('filled',!!this.value)">
         </div>`;}).join('')}
       <button class="btn btn-teal" style="margin-top:12px;" onclick="saveBatchScores()">保存本轮成绩</button>
 
       ${testedStudents.length?`<div class="tested-section">
-        <div class="section-label">✅ 已测完 (${testedStudents.length}人)</div>
+        <div class="tested-header">
+          <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
+          <div class="th-count">${testedStudents.length} 人</div>
+        </div>
         ${testedStudents.map(s=>`<div class="score-row done">
           <span class="snum">${String(s.number).padStart(2,'0')}</span>
           <span class="sname">${s.name}</span>
@@ -1324,16 +1773,35 @@ async function renderResults(sessionId){
         <span class="action no-print" onclick="deleteSession('${sessionId}')">删除</span>
       </div>
       <div style="text-align:center;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;cursor:pointer;" onclick="showRenameSessionModal('${sessionId}')">${displayName} ✏️</div>
+        <div style="font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px;">
+          ${displayName}
+          <span class="rename-btn no-print" onclick="showRenameSessionModal('${sessionId}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>重命名</span>
+        </div>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${formatDate(session.date)} ${session.status==='incomplete'?'<span class="status-tag incomplete">未完成</span>':'<span class="status-tag complete">完成</span>'}</div>
       </div>
+      ${records.length>=3?`<div class="podium">
+        ${[1,0,2].map(pi=>{
+          const r=records[pi];if(!r)return'';
+          const rank=r.rank||pi+1;
+          const cls=rank===1?'gold':rank===2?'silver':'bronze';
+          const avatarColor=rank===1?group?.color||'#E8A317':rank===2?'#8E9AAF':'#C17F4E';
+          return `<div class="podium-item ${cls}">
+            <div class="podium-avatar" style="background:${rank===1?'linear-gradient(135deg,#F0C040,#E8A317)':rank===2?'linear-gradient(135deg,#B8C4D8,#8E9AAF)':'linear-gradient(135deg,#D4956B,#C17F4E)'};">${gn(r.studentIds?.[0]).slice(0,1)}</div>
+            <div class="podium-block">
+              <div class="podium-name" onclick="${r.studentIds?.[0]?pLink(r.studentIds[0]):''}">${names(r.studentIds)}</div>
+              <div class="podium-time">${formatValue(getRecordValue(r,event),event)}</div>
+            </div>
+          </div>`;}).join('')}
+      </div>`:''}
       <div style="margin-bottom:20px;">
-        ${records.map((r,i)=>`
-          <div class="rank-item">
-            <span class="rank-num">${r.rank||i+1}</span>
+        ${records.map((r,i)=>{
+          const rank=r.rank||i+1;
+          if(rank<=3 && records.length>=3) return '';
+          return `<div class="rank-item">
+            <span class="rank-num">${rank}</span>
             <span class="rank-name" onclick="${r.studentIds?.[0]?pLink(r.studentIds[0]):''}">${names(r.studentIds)}</span>
             <span class="rank-time">${formatValue(getRecordValue(r,event),event)}</span>
-          </div>`).join('')}
+          </div>`;}).join('')}
       </div>
       <div class="btn-row no-print">
         <button class="btn btn-outline" onclick="exportCSV('${sessionId}')">导出CSV</button>
@@ -1365,7 +1833,10 @@ async function doRenameSession(sid){
   const session=await DB.get('sessions',sid);
   session.customName=name||null;
   await DB.put('sessions',session);
-  closeModal();showToast('已重命名');renderResults(sid);
+  closeModal();showToast('已重命名');
+  // 如果当前在记录列表页，刷新列表；否则刷新详情
+  if(location.hash==='#/records'||location.hash==='#/history') renderRecords();
+  else renderResults(sid);
 }
 
 async function exportCSV(sid){
@@ -1403,8 +1874,11 @@ async function renderRecords(){
   const tab=State.recordsSubTab;
   document.getElementById('app').innerHTML=`
     <div class="page">
-      <div class="page-header"><div class="page-title">记录</div></div>
-      <div class="sub-tabs">
+      <div class="page-header">
+        <div class="page-title">记录</div>
+        <div class="page-subtitle">${tab==='history'?'查看所有测试记录':'按项目查看排名'}</div>
+      </div>
+      <div class="sub-tabs" style="margin-bottom:18px;">
         <div class="sub-tab ${tab==='history'?'active':''}" onclick="State.recordsSubTab='history';renderRecords();">历史记录</div>
         <div class="sub-tab ${tab==='rankings'?'active':''}" onclick="State.recordsSubTab='rankings';renderRecords();">排名记录</div>
       </div>
@@ -1434,33 +1908,71 @@ async function renderHistoryList(){
     items.push({session:s,group:g,event:e,count:rc.length});
   }
 
+  const curGroup=F.groupId?allGroups.find(g=>g.id===F.groupId):null;
+  const curEvent=F.eventId?allEvents.find(e=>e.id===F.eventId):null;
+
   document.getElementById('records-content').innerHTML=`
-    <div class="filter-bar">
-      <div class="filter-chip ${!F.groupId?'active':''}" onclick="setHistoryFilter('groupId',null)">全部分组</div>
-      ${allGroups.map(g=>`<div class="filter-chip ${F.groupId===g.id?'active':''}" onclick="setHistoryFilter('groupId','${g.id}')">${g.name}</div>`).join('')}
+    <div class="filter-row">
+      <div class="filter-dropdown" id="dd-group">
+        <div class="filter-dropdown-btn" onclick="toggleDropdown('dd-group')">
+          <div class="dd-text"><span class="dd-label">分组</span><span class="dd-val">${curGroup?curGroup.name:'全部'}</span></div>
+          <div class="dd-arrow-wrap"><span class="dd-arrow">&#9660;</span></div>
+        </div>
+        <div class="filter-dropdown-menu" id="dd-group-menu">
+          <div class="dd-option ${!F.groupId?'active':''}" onclick="setHistoryFilter('groupId',null)"><span class="dd-check">${!F.groupId?'&#10003;':''}</span>全部分组</div>
+          ${allGroups.map(g=>`<div class="dd-option ${F.groupId===g.id?'active':''}" onclick="setHistoryFilter('groupId','${g.id}')"><span class="dd-check">${F.groupId===g.id?'&#10003;':''}</span><span style="width:8px;height:8px;border-radius:50%;background:${g.color||'#1B998B'};flex-shrink:0;"></span>${g.name}</div>`).join('')}
+        </div>
+      </div>
+      <div class="filter-dropdown" id="dd-event">
+        <div class="filter-dropdown-btn" onclick="toggleDropdown('dd-event')">
+          <div class="dd-text"><span class="dd-label">项目</span><span class="dd-val">${curEvent?curEvent.name:'全部'}</span></div>
+          <div class="dd-arrow-wrap"><span class="dd-arrow">&#9660;</span></div>
+        </div>
+        <div class="filter-dropdown-menu" id="dd-event-menu">
+          <div class="dd-option ${!F.eventId?'active':''}" onclick="setHistoryFilter('eventId',null)"><span class="dd-check">${!F.eventId?'&#10003;':''}</span>全部项目</div>
+          ${allEvents.filter(e=>!e.isHidden).sort((a,b)=>{const ac=a.category==='fitness'?0:1;const bc=b.category==='fitness'?0:1;return ac!==bc?ac-bc:a.sortOrder-b.sortOrder;}).map(e=>`<div class="dd-option ${F.eventId===e.id?'active':''}" onclick="setHistoryFilter('eventId','${e.id}')"><span class="dd-check">${F.eventId===e.id?'&#10003;':''}</span>${e.name}</div>`).join('')}
+        </div>
+      </div>
     </div>
-    <div class="filter-bar">
-      <div class="filter-chip ${!F.eventId?'active':''}" onclick="setHistoryFilter('eventId',null)">全部项目</div>
-      ${allEvents.filter(e=>!e.isHidden).map(e=>`<div class="filter-chip ${F.eventId===e.id?'active':''}" onclick="setHistoryFilter('eventId','${e.id}')">${getEventEmoji(e.name)} ${e.name}</div>`).join('')}
-    </div>
-    ${months.size>1?`<div class="filter-bar">
-      <div class="filter-chip ${!F.yearMonth?'active':''}" onclick="setHistoryFilter('yearMonth',null)">全部时间</div>
-      ${[...months].map(m=>`<div class="filter-chip ${F.yearMonth===m?'active':''}" onclick="setHistoryFilter('yearMonth','${m}')">${m}</div>`).join('')}
-    </div>`:''}
-    ${!items.length?`<div class="empty-state"><div class="icon">&#128202;</div><div class="title">暂无记录</div></div>`
+    ${!items.length?`<div class="empty-state" style="padding:48px 20px;"><div class="icon" style="font-size:40px;opacity:0.6;">&#128202;</div><div class="title">暂无记录</div><div class="desc">完成一次测试后记录会出现在这里</div></div>`
     :items.map(it=>{
       const dn=it.session.customName||(it.group?.name||'未知')+' · '+(it.event?.name||'未知');
-      return `<div class="list-item" onclick="${it.session.status==='incomplete'?`resumeTest('${it.session.id}')`:`Router.navigate('/results/${it.session.id}')`}">
-        <div class="emoji-icon">${getEventEmoji(it.event?.name||'')}</div>
-        <div class="info">
-          <div class="name">${dn}</div>
-          <div class="meta">${formatDate(it.session.date)} · ${it.count}人
-            ${it.session.status==='incomplete'?'<span class="status-tag incomplete">未完成</span>':''}
+      const goTo=it.session.status==='incomplete'?`resumeTest('${it.session.id}')`:`Router.navigate('/results/${it.session.id}')`;
+      const accentColor=it.group?.color||'var(--accent)';
+      return `<div class="history-card" style="--card-accent:${accentColor};" onclick="${goTo}">
+        <div class="hc-left">${getEventEmoji(it.event?.name||'')}</div>
+        <div class="hc-body">
+          <div class="hc-name">${dn}</div>
+          <div class="hc-meta">
+            <span>${formatDate(it.session.date)}</span>
+            <span class="sep">/</span>
+            <span>${it.count}人</span>
+            ${it.session.status==='incomplete'?'<span class="status-tag incomplete" style="margin-left:4px;">未完成</span>':''}
           </div>
         </div>
-        <div class="arrow">&#10095;</div>
+        <div class="hc-actions">
+          <div class="list-rename-btn" onclick="event.stopPropagation();showRenameSessionModal('${it.session.id}')" title="重命名"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        </div>
       </div>`;}).join('')}`;
 }
+
+function toggleDropdown(id){
+  const menu=document.getElementById(id+'-menu');
+  const btn=document.querySelector('#'+id+' .filter-dropdown-btn');
+  const isOpen=menu.classList.contains('show');
+  // 先关闭所有下拉
+  document.querySelectorAll('.filter-dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+  document.querySelectorAll('.filter-dropdown-btn.open').forEach(b=>b.classList.remove('open'));
+  if(!isOpen){menu.classList.add('show');btn.classList.add('open');}
+}
+
+// 点击空白处关闭下拉
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.filter-dropdown')){
+    document.querySelectorAll('.filter-dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+    document.querySelectorAll('.filter-dropdown-btn.open').forEach(b=>b.classList.remove('open'));
+  }
+});
 
 function setHistoryFilter(key,val){State.historyFilter[key]=val;renderRecords();}
 
@@ -1469,14 +1981,27 @@ function setHistoryFilter(key,val){State.historyFilter[key]=val;renderRecords();
    ============================================================ */
 async function renderRankingsList(){
   const events=await DB.getVisibleEvents();
+  const standard=events.filter(e=>(e.category||'standard')==='standard');
+  const fitness=events.filter(e=>e.category==='fitness');
   document.getElementById('records-content').innerHTML=`
-    <div class="section-label">选择项目查看排名</div>
-    ${events.map(ev=>`
-      <div class="list-item" onclick="Router.navigate('/rankings/${ev.id}')">
-        <div class="emoji-icon">${getEventEmoji(ev.name)}</div>
-        <div class="info"><div class="name">${ev.name}</div><div class="meta">${ev.category==='fitness'?'体测':'训练'}</div></div>
-        <div class="arrow">&#10095;</div>
-      </div>`).join('')}`;
+    ${fitness.length?`<div class="section-label">体测项目</div>
+    <div class="rankings-grid">
+    ${fitness.map(ev=>`
+      <div class="ranking-entry" style="--entry-accent:var(--teal);" onclick="Router.navigate('/rankings/${ev.id}')">
+        <div class="re-icon">${getEventEmoji(ev.name)}</div>
+        <div class="re-name">${ev.name}</div>
+        <div class="re-tag fitness">体测</div>
+      </div>`).join('')}
+    </div>`:''}
+    ${standard.length?`<div class="section-label" style="margin-top:18px;">常规训练</div>
+    <div class="rankings-grid">
+    ${standard.map(ev=>`
+      <div class="ranking-entry" style="--entry-accent:var(--accent);" onclick="Router.navigate('/rankings/${ev.id}')">
+        <div class="re-icon">${getEventEmoji(ev.name)}</div>
+        <div class="re-name">${ev.name}</div>
+        <div class="re-tag training">训练</div>
+      </div>`).join('')}
+    </div>`:''}`;
 }
 
 async function renderEventRanking(eventId){
@@ -1500,15 +2025,48 @@ async function renderEventRanking(eventId){
         <div class="filter-chip ${F.timeRange==='month'?'active':''}" onclick="setRankFilter('timeRange','month','${eventId}')">近一月</div>
         <div class="filter-chip ${F.timeRange==='term'?'active':''}" onclick="setRankFilter('timeRange','term','${eventId}')">本学期</div>
       </div>
-      ${!ranking.length?`<div class="empty-state"><div class="icon">🏅</div><div class="title">暂无排名数据</div></div>`
-      :ranking.map(item=>`
-        <div class="rank-item" onclick="Router.navigate('/groups/${item.student?.groupId}/student/${item.studentId}')">
-          <span class="rank-num">${item.rank}</span>
-          ${!isGroupFilter?`<span style="font-size:11px;color:var(--text-muted);width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.group?.name||''}</span>`:''}
-          <span style="font-family:Barlow;font-weight:600;color:var(--accent);width:28px;font-variant-numeric:tabular-nums;">${item.student?String(item.student.number).padStart(2,'0'):'?'}</span>
-          <span class="rank-name">${item.student?.name||'未知'}</span>
-          <span class="rank-time">${formatValue(item.value,event)}</span>
-        </div>`).join('')}
+      ${!ranking.length?`<div class="empty-state"><div class="icon">&#127941;</div><div class="title">暂无排名数据</div></div>`
+      :(()=>{
+        const top3=ranking.filter(x=>x.rank<=3);
+        const rest=ranking.filter(x=>x.rank>3);
+        let html='';
+        if(top3.length>=3){
+          html+=`<div class="podium">`;
+          for(const pi of [1,0,2]){
+            const item=top3[pi];if(!item)continue;
+            const cls=item.rank===1?'gold':item.rank===2?'silver':'bronze';
+            const gColor=item.group?.color||'#1B998B';
+            html+=`<div class="podium-item ${cls}" onclick="Router.navigate('/groups/${item.student?.groupId}/student/${item.studentId}')">
+              <div class="podium-avatar">${item.student?.name?.slice(0,1)||'?'}</div>
+              <div class="podium-block">
+                <div class="podium-name">${item.student?.name||'未知'}</div>
+                <div class="podium-time">${formatValue(item.value,event)}</div>
+              </div>
+            </div>`;
+          }
+          html+=`</div>`;
+        } else {
+          for(const item of top3){
+            html+=`<div class="rank-item" onclick="Router.navigate('/groups/${item.student?.groupId}/student/${item.studentId}')">
+              <span class="rank-num">${item.rank}</span>
+              ${!isGroupFilter?`<span style="font-size:11px;color:var(--text-muted);width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.group?.name||''}</span>`:''}
+              <span style="font-family:Barlow;font-weight:600;color:var(--accent);width:28px;font-variant-numeric:tabular-nums;">${item.student?String(item.student.number).padStart(2,'0'):'?'}</span>
+              <span class="rank-name">${item.student?.name||'未知'}</span>
+              <span class="rank-time">${formatValue(item.value,event)}</span>
+            </div>`;
+          }
+        }
+        for(const item of rest){
+          html+=`<div class="rank-item" onclick="Router.navigate('/groups/${item.student?.groupId}/student/${item.studentId}')">
+            <span class="rank-num">${item.rank}</span>
+            ${!isGroupFilter?`<span style="font-size:11px;color:var(--text-muted);width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.group?.name||''}</span>`:''}
+            <span style="font-family:Barlow;font-weight:600;color:var(--accent);width:28px;font-variant-numeric:tabular-nums;">${item.student?String(item.student.number).padStart(2,'0'):'?'}</span>
+            <span class="rank-name">${item.student?.name||'未知'}</span>
+            <span class="rank-time">${formatValue(item.value,event)}</span>
+          </div>`;
+        }
+        return html;
+      })()}
     </div>${renderNav('records')}`;
 }
 
@@ -1948,6 +2506,7 @@ async function importBackup(){
     for(const s of (data.sessions||[]))await DB.put('sessions',s);
     for(const r of (data.records||[]))await DB.put('records',r);
     localStorage.removeItem('mj_migrated_v2');
+    localStorage.removeItem('mj_renamed_fitness');
     showToast('数据已恢复');Router.navigate('/');
   }catch(e){showToast('导入失败：文件格式不正确');}
 }
@@ -2015,6 +2574,7 @@ async function skipWelcome(){
 Router.on('/',renderHome);
 Router.on('/welcome',renderWelcome);
 Router.on('/timer/event',renderEventSelect);
+Router.on('/timer/group',renderGroupSelect);
 Router.on('/timer/run',renderTimerRun);
 Router.on('/results/:sessionId',renderResults);
 Router.on('/records',renderRecords);
@@ -2037,6 +2597,7 @@ async function init(){
   await DB.initPresetEvents();
   await DB.initV2PresetEvents();
   await DB.migrateV2Data();
+  await DB.renameFitnessEvents();
   await Router.resolve();
 }
 init();
