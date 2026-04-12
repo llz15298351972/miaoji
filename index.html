@@ -148,12 +148,12 @@ body::before {
 .timer-status.stopped { color:var(--teal); }
 
 .lap-list { margin:12px 0; display:flex; flex-direction:column; gap:5px; }
-.lap-item { display:flex; align-items:center; padding:10px 12px; background:var(--bg); border-radius:var(--radius-sm); gap:8px; }
+.lap-item { display:flex; align-items:center; padding:8px 12px; background:var(--bg); border-radius:var(--radius-sm); gap:8px; min-height:40px; flex-wrap:wrap; }
 .lap-item .rank { font-family:'Outfit',sans-serif; font-size:14px; font-weight:700; color:var(--accent); width:32px; text-align:center; }
 .lap-item .time { font-family:'Barlow',sans-serif; font-size:16px; font-weight:500; color:var(--text-primary); flex:1; font-variant-numeric:tabular-nums; letter-spacing:0.5px; }
-.lap-item .student-tags { display:flex; flex-wrap:wrap; gap:3px; cursor:pointer; flex:1; min-width:0; justify-content:flex-end; }
-.lap-item .student-chip { font-size:11px; color:var(--text-primary); background:var(--accent-light); border:1px solid rgba(255,107,53,0.2); padding:2px 8px; border-radius:12px; white-space:nowrap; font-weight:500; }
-.lap-item .student-chip.add-more { background:var(--bg-subtle); border:1.5px dashed var(--text-muted); color:var(--accent); font-weight:700; padding:2px 7px; cursor:pointer; }
+.lap-item .student-tags { display:flex; flex-wrap:wrap; gap:3px; cursor:pointer; flex:1; min-width:0; justify-content:flex-end; align-items:center; }
+.lap-item .student-chip { font-size:10px; color:var(--text-primary); background:var(--accent-light); border:1px solid rgba(255,107,53,0.2); padding:2px 6px; border-radius:10px; white-space:nowrap; font-weight:500; line-height:1.3; }
+.lap-item .student-chip.add-more { background:var(--bg-subtle); border:1.5px dashed var(--text-muted); color:var(--accent); font-weight:700; padding:2px 6px; cursor:pointer; font-size:11px; }
 .lap-item .student-tag { font-size:12px; color:var(--text-secondary); background:var(--bg-card); border:1px solid var(--bg-subtle); padding:4px 10px; border-radius:20px; box-shadow:var(--shadow-sm); cursor:pointer; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lap-item .student-tag.empty { color:var(--text-muted); border:1px dashed var(--bg-subtle); background:transparent; box-shadow:none; }
 .lap-item .multi-badge { font-size:10px; color:var(--teal); background:var(--teal-light); padding:1px 6px; border-radius:8px; font-weight:600; margin-left:-4px; }
@@ -171,7 +171,23 @@ body::before {
 /* ============================================================
    排名页
    ============================================================ */
-/* 奖牌榜 — 支持并列（每名次最多3人） */
+/* 经典领奖台 — 3人并排 (2nd-1st-3rd) */
+.podium { display:flex; justify-content:center; align-items:flex-end; gap:8px; margin:16px 0 20px; padding:0 6px; }
+.podium-col { text-align:center; flex:1; max-width:110px; }
+.podium-avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Outfit',sans-serif; font-weight:800; font-size:13px; color:white; margin:0 auto 6px; box-shadow:0 3px 10px rgba(0,0,0,0.12); }
+.podium-block { border-radius:var(--radius-sm) var(--radius-sm) 0 0; padding:10px 6px 12px; }
+.podium-group { font-size:10px; color:var(--text-muted); margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.podium-name { font-family:'Outfit',sans-serif; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.podium-name:active { color:var(--accent); }
+.podium-score { font-family:'Barlow',sans-serif; font-size:11px; color:var(--text-secondary); font-variant-numeric:tabular-nums; margin-top:1px; }
+.podium-col.gold .podium-avatar { background:linear-gradient(135deg,#F0C040,#E8A317); width:48px; height:48px; font-size:15px; }
+.podium-col.gold .podium-block { background:var(--gold-light); border-top:3px solid var(--gold); padding:14px 6px 14px; }
+.podium-col.silver .podium-avatar { background:linear-gradient(135deg,#B8C4D4,#8E9AAF); }
+.podium-col.silver .podium-block { background:#F2F3F7; border-top:3px solid var(--silver); }
+.podium-col.bronze .podium-avatar { background:linear-gradient(135deg,#D4956B,#C17F4E); }
+.podium-col.bronze .podium-block { background:#FDF5EF; border-top:3px solid var(--bronze); }
+
+/* 奖牌榜 — 多人并列时用分层卡片 */
 .medal-board { margin:16px 0 20px; display:flex; flex-direction:column; gap:8px; }
 .medal-tier { display:flex; align-items:stretch; gap:0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-md); }
 .medal-rank-stripe { width:42px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:white; font-family:'Outfit',sans-serif; }
@@ -180,20 +196,21 @@ body::before {
 .medal-tier.gold .medal-rank-stripe { background:linear-gradient(180deg,#F0C040,#E8A317); }
 .medal-tier.silver .medal-rank-stripe { background:linear-gradient(180deg,#C8D0DC,#8E9AAF); }
 .medal-tier.bronze .medal-rank-stripe { background:linear-gradient(180deg,#D4956B,#C17F4E); }
-.medal-students { flex:1; display:flex; flex-wrap:wrap; }
-.medal-student { flex:1; min-width:0; padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.15s; }
-.medal-student:active { background:rgba(0,0,0,0.03); }
-.medal-tier.gold .medal-students { background:var(--gold-light); }
-.medal-tier.silver .medal-students { background:#F2F3F7; }
-.medal-tier.bronze .medal-students { background:#FDF5EF; }
-.medal-student + .medal-student { border-left:1px solid rgba(0,0,0,0.06); }
-.medal-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Outfit',sans-serif; font-weight:800; font-size:13px; color:white; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+.medal-tier-body { flex:1; display:flex; flex-direction:column; }
+.medal-row { padding:9px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.15s; }
+.medal-row:active { background:rgba(0,0,0,0.03); }
+.medal-row + .medal-row { border-top:1px solid rgba(0,0,0,0.05); }
+.medal-tier.gold .medal-tier-body { background:var(--gold-light); }
+.medal-tier.silver .medal-tier-body { background:#F2F3F7; }
+.medal-tier.bronze .medal-tier-body { background:#FDF5EF; }
+.medal-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Outfit',sans-serif; font-weight:800; font-size:12px; color:white; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
 .medal-tier.gold .medal-avatar { background:linear-gradient(135deg,#F0C040,#E8A317); }
 .medal-tier.silver .medal-avatar { background:linear-gradient(135deg,#B8C4D4,#8E9AAF); }
 .medal-tier.bronze .medal-avatar { background:linear-gradient(135deg,#D4956B,#C17F4E); }
-.medal-info { min-width:0; flex:1; }
-.medal-name { font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.medal-time { font-family:'Barlow',sans-serif; font-size:12px; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+.medal-group { font-size:10px; color:var(--text-muted); flex-shrink:0; max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.medal-num-tag { font-family:'Barlow',sans-serif; font-weight:600; color:var(--accent); font-size:13px; width:24px; flex-shrink:0; font-variant-numeric:tabular-nums; }
+.medal-name { font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.medal-time { font-family:'Barlow',sans-serif; font-size:12px; color:var(--text-secondary); font-variant-numeric:tabular-nums; flex-shrink:0; }
 
 .rank-item { display:flex; align-items:center; padding:11px 14px; border-radius:var(--radius-xs); }
 .rank-item:nth-child(odd) { background:rgba(237,232,226,0.4); }
@@ -755,10 +772,32 @@ function compareValues(a, b, rankOrder) {
   return a-b;
 }
 
-// 奖牌榜渲染 — 支持并列排名，每tier最多3人
+// 奖牌榜渲染 — 3人经典领奖台 / 多人分层卡片
+// tiers: [{rank, cls, students:[{name,num,id,groupId,groupName,valueStr}]}]
+// opts: {showGroup:bool}
 function renderMedalBoard(tiers, opts={}) {
-  // tiers: [{rank:1, cls:'gold', students:[{name,num,id,groupId,value}]}]
   if(!tiers.length) return '';
+  const totalStudents=tiers.reduce((s,t)=>s+t.students.length,0);
+  const showGroup=opts.showGroup||false;
+
+  // 刚好3人且3个名次 → 经典领奖台 (2nd-1st-3rd)
+  if(totalStudents===3&&tiers.length===3){
+    const byRank={};tiers.forEach(t=>byRank[t.rank]=t);
+    const order=[byRank[2],byRank[1],byRank[3]].filter(Boolean);
+    return `<div class="podium">${order.map(tier=>{
+      const s=tier.students[0];
+      const click=s.id&&s.groupId?`onclick="Router.navigate('/groups/${s.groupId}/student/${s.id}')"`:''
+      return `<div class="podium-col ${tier.cls}" ${click}>
+        <div class="podium-avatar">${(s.name||'?').slice(0,1)}</div>
+        <div class="podium-block">
+          ${showGroup&&s.groupName?`<div class="podium-group">${s.groupName}</div>`:''}
+          <div class="podium-name">${s.num?s.num+' ':''}${s.name||'未分配'}</div>
+          <div class="podium-score">${s.valueStr||''}</div>
+        </div>
+      </div>`;}).join('')}</div>`;
+  }
+
+  // 多于3人 → 分层奖牌卡片，每行一人
   const medalIcons={gold:'🥇',silver:'🥈',bronze:'🥉'};
   return `<div class="medal-board">${tiers.map(tier=>{
     return `<div class="medal-tier ${tier.cls}">
@@ -766,14 +805,14 @@ function renderMedalBoard(tiers, opts={}) {
         <div class="medal-icon">${medalIcons[tier.cls]}</div>
         <div class="medal-num">${tier.rank}</div>
       </div>
-      <div class="medal-students">${tier.students.map(s=>{
+      <div class="medal-tier-body">${tier.students.map(s=>{
         const click=s.id&&s.groupId?`onclick="Router.navigate('/groups/${s.groupId}/student/${s.id}')"`:''
-        return `<div class="medal-student" ${click}>
+        return `<div class="medal-row" ${click}>
           <div class="medal-avatar">${(s.name||'?').slice(0,1)}</div>
-          <div class="medal-info">
-            <div class="medal-name">${s.num?s.num+' ':''}${s.name||'未分配'}</div>
-            <div class="medal-time">${s.valueStr||''}</div>
-          </div>
+          ${showGroup&&s.groupName?`<span class="medal-group">${s.groupName}</span>`:''}
+          <span class="medal-num-tag">${s.num||''}</span>
+          <span class="medal-name">${s.name||'未分配'}</span>
+          <span class="medal-time">${s.valueStr||''}</span>
         </div>`;}).join('')}
       </div>
     </div>`;}).join('')}</div>`;
@@ -1110,10 +1149,12 @@ async function calculateRanking(eventId,opts={}){
   }
   const ranking=Object.values(bestByStudent);
   ranking.sort((a,b)=>compareValues(a.value,b.value,event?.rankOrder||'asc'));
+  let nextRank=1;
   ranking.forEach((item,i)=>{
-    // 并列排名：值相同则rank相同
+    // 并列排名不跳号：两人并列第1，下一名是第2
     if(i>0&&ranking[i-1].value===item.value) item.rank=ranking[i-1].rank;
-    else item.rank=i+1;
+    else item.rank=nextRank;
+    nextRank=item.rank+1;
     item.student=allStudents.find(s=>s.id===item.studentId);
     if(item.student) item.group=allGroups.find(g=>g.id===item.student.groupId);
   });
@@ -1416,7 +1457,7 @@ function renderLapList(students) {
     if(State.timerMode!=='quick'){
       if(sInfos.length>0){
         const chips=sInfos.map(s=>`<span class="student-chip">${s.num} ${s.name}</span>`).join('');
-        const addBtn=sInfos.length<3?`<span class="student-chip add-more" onclick="event.stopPropagation();openStudentPicker(${lap.rank})">+</span>`:'';
+        const addBtn=sInfos.length<10?`<span class="student-chip add-more" onclick="event.stopPropagation();openStudentPicker(${lap.rank})">+</span>`:'';
         tag=`<div class="student-tags" onclick="openStudentPicker(${lap.rank})">${chips}${addBtn}</div>`;
       } else {
         tag=`<span class="student-tag empty" onclick="openStudentPicker(${lap.rank})">输入学号</span>`;
@@ -1497,7 +1538,7 @@ async function openStudentPicker(rank){
   const renderItem=(s,isTested)=>{
     const isOtherLap=assigned.has(s.id)&&!cur.includes(s.id)&&!isTested;
     const isC=cur.includes(s.id);
-    const disabled=isTested||isOtherLap||(cur.length>=3&&!isC);
+    const disabled=isTested||isOtherLap||(cur.length>=10&&!isC);
     return `<div class="student-picker-item ${disabled?'disabled':''} ${isC?'selected':''}"
       onclick="${disabled?'':`pickStudent('${s.id}',${rank})`}" data-search="${s.number} ${s.name}">
       <span class="num">${String(s.number).padStart(2,'0')}</span><span>${s.name}</span>
@@ -1509,7 +1550,7 @@ async function openStudentPicker(rank){
 
   document.getElementById('app').insertAdjacentHTML('beforeend',`
     <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
-      <div class="modal-title">选择学生 · 第${rank}名 <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(最多3人并列)</span></div>
+      <div class="modal-title">选择学生 · 第${rank}名 <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(可多人并列)</span></div>
       <div class="input-group"><input class="input" id="student-search" placeholder="输入编号或姓名搜索..." oninput="filterStudentList()" autofocus></div>
       <div id="student-list">
         ${available.map(s=>renderItem(s,false)).join('')}
@@ -1532,8 +1573,8 @@ async function pickStudent(sid,rank){
   const lap=State.timerLaps.find(l=>l.rank===rank);if(!lap)return;
   const i=lap.studentIds.indexOf(sid);
   if(i>=0) lap.studentIds.splice(i,1);
-  else if(lap.studentIds.length<3) lap.studentIds.push(sid);
-  else { showToast('每个名次最多3人并列'); return; }
+  else if(lap.studentIds.length<10) lap.studentIds.push(sid);
+  else { showToast('每个名次最多10人并列'); return; }
   closeModal();updateLapList();
   // 如果还有选中空间，重新打开picker继续选
   if(lap.studentIds.length>0&&lap.studentIds.length<3){
@@ -1603,11 +1644,12 @@ async function doBatchFitnessArchive(){
     const allRecs=await DB.getRecordsBySession(BF.sessionId);
     const event=await DB.get('events',State.timerEventId);
     allRecs.sort((a,b)=>compareValues(a.timeMs,b.timeMs,event?.rankOrder||'asc'));
-    for(let i=0;i<allRecs.length;i++){
+    {let nr=1;for(let i=0;i<allRecs.length;i++){
       if(i>0&&allRecs[i].timeMs===allRecs[i-1].timeMs) allRecs[i].rank=allRecs[i-1].rank;
-      else allRecs[i].rank=i+1;
+      else allRecs[i].rank=nr;
+      nr=allRecs[i].rank+1;
       await DB.put('records',allRecs[i]);
-    }
+    }}
     Timer.reset();
     const g=await DB.get('groups',State.timerGroupId);
     // 弹窗提示
@@ -2021,12 +2063,13 @@ async function saveBatchScores(){
     // 计算排名
     const recs=await DB.getRecordsBySession(B.sessionId);
     recs.sort((a,b)=>compareValues(getRecordValue(a,event),getRecordValue(b,event),event.rankOrder||'asc'));
-    for(let i=0;i<recs.length;i++){
+    {let nr=1;for(let i=0;i<recs.length;i++){
       const val=getRecordValue(recs[i],event);
       if(i>0&&val===getRecordValue(recs[i-1],event)) recs[i].rank=recs[i-1].rank;
-      else recs[i].rank=i+1;
+      else recs[i].rank=nr;
+      nr=recs[i].rank+1;
       await DB.put('records',recs[i]);
-    }
+    }}
     Router.navigate('/results/'+B.sessionId);
     return;
   }
@@ -2335,10 +2378,10 @@ async function renderEventRanking(eventId){
         for(const item of top3){
           let tier=tiers.find(t=>t.rank===item.rank);
           if(!tier){tier={rank:item.rank,cls:clsMap[item.rank],students:[]};tiers.push(tier);}
-          tier.students.push({name:item.student?.name||'未知',num:item.student?String(item.student.number).padStart(2,'0'):'?',id:item.studentId,groupId:item.student?.groupId,valueStr:formatValue(item.value,event)});
+          tier.students.push({name:item.student?.name||'未知',num:item.student?String(item.student.number).padStart(2,'0'):'?',id:item.studentId,groupId:item.student?.groupId,groupName:item.group?.name||'',valueStr:formatValue(item.value,event)});
         }
         tiers.sort((a,b)=>a.rank-b.rank);
-        if(tiers.length) html+=renderMedalBoard(tiers);
+        if(tiers.length) html+=renderMedalBoard(tiers,{showGroup:!isGroupFilter});
         for(const item of rest){
           html+=`<div class="rank-item" onclick="Router.navigate('/groups/${item.student?.groupId}/student/${item.studentId}')">
             <span class="rank-num">${item.rank}</span>
