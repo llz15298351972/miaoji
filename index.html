@@ -153,6 +153,7 @@ body::before {
 .lap-item .time { font-family:'Barlow',sans-serif; font-size:16px; font-weight:500; color:var(--text-primary); flex:1; font-variant-numeric:tabular-nums; letter-spacing:0.5px; }
 .lap-item .student-tags { display:flex; flex-wrap:wrap; gap:3px; cursor:pointer; flex:1; min-width:0; justify-content:flex-end; }
 .lap-item .student-chip { font-size:11px; color:var(--text-primary); background:var(--accent-light); border:1px solid rgba(255,107,53,0.2); padding:2px 8px; border-radius:12px; white-space:nowrap; font-weight:500; }
+.lap-item .student-chip.add-more { background:var(--bg-subtle); border:1.5px dashed var(--text-muted); color:var(--accent); font-weight:700; padding:2px 7px; cursor:pointer; }
 .lap-item .student-tag { font-size:12px; color:var(--text-secondary); background:var(--bg-card); border:1px solid var(--bg-subtle); padding:4px 10px; border-radius:20px; box-shadow:var(--shadow-sm); cursor:pointer; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lap-item .student-tag.empty { color:var(--text-muted); border:1px dashed var(--bg-subtle); background:transparent; box-shadow:none; }
 .lap-item .multi-badge { font-size:10px; color:var(--teal); background:var(--teal-light); padding:1px 6px; border-radius:8px; font-weight:600; margin-left:-4px; }
@@ -1415,7 +1416,8 @@ function renderLapList(students) {
     if(State.timerMode!=='quick'){
       if(sInfos.length>0){
         const chips=sInfos.map(s=>`<span class="student-chip">${s.num} ${s.name}</span>`).join('');
-        tag=`<div class="student-tags" onclick="openStudentPicker(${lap.rank})">${chips}</div>`;
+        const addBtn=sInfos.length<3?`<span class="student-chip add-more" onclick="event.stopPropagation();openStudentPicker(${lap.rank})">+</span>`:'';
+        tag=`<div class="student-tags" onclick="openStudentPicker(${lap.rank})">${chips}${addBtn}</div>`;
       } else {
         tag=`<span class="student-tag empty" onclick="openStudentPicker(${lap.rank})">输入学号</span>`;
       }
