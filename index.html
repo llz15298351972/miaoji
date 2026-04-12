@@ -353,6 +353,7 @@ body::before {
 }
 
 /* 学生多选 */
+.sticky-bottom-bar { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--bg); padding:12px 24px calc(12px + var(--safe-bottom)); box-shadow:0 -2px 12px rgba(26,26,46,0.08); max-width:500px; margin:0 auto; }
 .student-check { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border-radius:var(--radius-sm); margin-bottom:4px; cursor:pointer; border:1.5px solid transparent; transition:all 0.15s; }
 .student-check.selected { border-color:var(--accent); background:var(--accent-light); }
 .student-check.disabled { opacity:0.4; cursor:default; }
@@ -880,13 +881,22 @@ const DB = {
   },
 
   async renameFitnessEvents(){
-    if(localStorage.getItem('mj_renamed_fitness')) return;
     const renames={'一分钟仰卧起坐':'一分钟仰卧起坐（体测）','一分钟跳绳':'一分钟跳绳（体测）','坐位体前屈':'坐位体前屈（体测）','肺活量':'肺活量（体测）'};
     const events=await this.getAll('events');
+    // 重命名旧名称
     for(const ev of events){
       if(renames[ev.name]){ev.name=renames[ev.name];await this.put('events',ev);}
     }
-    localStorage.setItem('mj_renamed_fitness','1');
+    // 去重：同名事件只保留一个
+    const seen=new Map();
+    for(const ev of await this.getAll('events')){
+      if(seen.has(ev.name)){
+        // 删除重复的（保留第一个）
+        await this.del('events',ev.id);
+      } else {
+        seen.set(ev.name,ev.id);
+      }
+    }
   },
 
   async restoreFromBackup(){
@@ -974,7 +984,7 @@ const Countdown = {
     }
     if(B.countdownRemaining<=0){
       B.countdownRunning=false;
-      if(B.bellEnabled) playBeep(800,880);
+      if(B.bellEnabled){ playBeep(400,880); setTimeout(()=>playBeep(400,880),500); setTimeout(()=>playBeep(600,1046),1000); }
       showCountdownDone();
       return;
     }
@@ -1416,7 +1426,10 @@ async function renderStudentSelection(){
           <span style="flex:1;">${s.name}</span>
           ${done?'<span style="font-size:11px;color:var(--teal);">已测</span>':''}
         </div>`;}).join('')}
-      <button class="btn btn-accent" style="margin-top:16px;" onclick="confirmStudentSelection()" ${B.selectedStudentIds.length===0?'disabled':''}>
+      <div style="height:72px;"></div>
+    </div>
+    <div class="sticky-bottom-bar">
+      <button class="btn btn-accent" onclick="confirmStudentSelection()" ${B.selectedStudentIds.length===0?'disabled':''}>
         确定 (${B.selectedStudentIds.length}人)
       </button>
     </div>`;
@@ -2595,9 +2608,9 @@ async function init(){
   await DB.init();
   if(DB.db&&!DB._useFallback) await DB.restoreFromBackup();
   await DB.initPresetEvents();
+  await DB.renameFitnessEvents();
   await DB.initV2PresetEvents();
   await DB.migrateV2Data();
-  await DB.renameFitnessEvents();
   await Router.resolve();
 }
 init();
