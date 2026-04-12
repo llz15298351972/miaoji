@@ -765,13 +765,28 @@ function showConfirm(title,msg) {
 function resolveConfirm(v) { document.getElementById('confirm-dialog')?.remove(); window._confirmResolve?.(v); }
 function closeModal() { document.querySelector('.modal-overlay')?.remove(); }
 
+let _audioCtx=null;
+function getAudioCtx(){
+  if(!_audioCtx) _audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(_audioCtx.state==='suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function warmupAudio(){
+  const ctx=getAudioCtx();
+  // 播放一个无声音来解锁音频（移动端必需）
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0,ctx.currentTime);
+  osc.start();osc.stop(ctx.currentTime+0.01);
+}
 function playBeep(duration=600, frequency=880) {
   try {
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
     const osc=ctx.createOscillator(); const gain=ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
     osc.frequency.value=frequency; osc.type='sine';
-    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.setValueAtTime(0.8,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+duration/1000);
     osc.start(); osc.stop(ctx.currentTime+duration/1000);
   } catch(e){}
 }
@@ -1542,7 +1557,7 @@ async function renderCountdownTest(){
   if(isRunning) Countdown._tick();
 }
 
-function startCountdown(sec){Countdown.start(sec);renderCountdownTest();}
+function startCountdown(sec){warmupAudio();Countdown.start(sec);renderCountdownTest();}
 function toggleBell(){
   State.batchTest.bellEnabled=!State.batchTest.bellEnabled;
   if(location.hash.includes('/test/input')) renderInputTest();
@@ -1643,6 +1658,7 @@ async function renderInputTest(){
 }
 
 function startInputCountdown(sec){
+  warmupAudio();
   State.batchTest.countdownStarted=true;
   Countdown.start(sec);
   renderInputTest();
