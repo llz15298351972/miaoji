@@ -423,13 +423,6 @@ body::before {
     font-family:'Barlow',sans-serif; font-variant-numeric:tabular-nums;
   }
 }
-/* 手机截图预览模式 */
-body.print-preview { overflow:auto !important; height:auto !important; }
-body.print-preview #app { height:auto !important; overflow:visible !important; }
-body.print-preview .page { overflow:visible !important; height:auto !important; flex:none !important; }
-body.print-preview .page::after { display:none !important; }
-body.print-preview .bottom-nav,
-body.print-preview .no-print { display:none !important; }
 
 /* ============================================================
    首页大卡片
@@ -2470,15 +2463,15 @@ function showRankExportMenu(eventId){
   document.getElementById('app').insertAdjacentHTML('beforeend',`
     <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()" style="max-width:280px;">
       <div class="modal-title">导出排名数据</div>
-      <button class="btn btn-accent" style="margin-bottom:8px;" onclick="closeModal();exportRankingPDF('${eventId}')">导出 PDF（排名截图）</button>
+      <button class="btn btn-accent" style="margin-bottom:8px;" onclick="exportRankingPDF('${eventId}')">导出 PDF（排名截图）</button>
       <button class="btn btn-teal" onclick="closeModal();exportRankingExcel('${eventId}')">导出 Excel（排名表格）</button>
     </div></div>`);
 }
 
-async function exportRankingPDF(eventId){
-  // 隐藏非打印元素，触发打印
-  showToast('正在生成PDF，请在弹出的界面中选择"保存为PDF"');
-  setTimeout(()=>window.print(),300);
+function exportRankingPDF(eventId){
+  // 先关闭模态框，然后同步调用print（iOS要求必须在用户点击的同步栈中）
+  closeModal();
+  window.print();
 }
 
 async function exportRankingExcel(eventId){
@@ -2788,23 +2781,8 @@ async function deleteRecord(rid,gid,sid){
 }
 
 function printProfile(){
-  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if(!isMobile){window.print();return;}
-  // 手机端：进入截图预览模式
-  document.body.classList.add('print-preview');
-  const bar=document.createElement('div');
-  bar.id='print-preview-bar';
-  bar.innerHTML=`<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--accent);color:white;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;font-family:Outfit,sans-serif;">
-    <span style="font-size:14px;font-weight:600;">截图预览模式</span>
-    <button onclick="exitPrintPreview()" style="background:white;color:var(--accent);border:none;padding:6px 16px;border-radius:20px;font-weight:600;font-size:13px;cursor:pointer;">完成</button>
-  </div>
-  <div style="height:48px;"></div>`;
-  document.body.prepend(bar);
-  showToast('请长按截屏保存');
-}
-function exitPrintPreview(){
-  document.body.classList.remove('print-preview');
-  document.getElementById('print-preview-bar')?.remove();
+  // iOS Safari 和桌面端都支持 window.print()，直接调用
+  window.print();
 }
 
 async function deleteStudent(gid,sid){
