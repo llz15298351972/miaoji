@@ -417,11 +417,19 @@ body::before {
   body::before { display:none; }
   #app { max-width:none; }
   .page { padding:10px !important; overflow:visible !important; }
+  .page::after { display:none !important; }
   .bottom-nav, .topbar .back, .btn, .no-print { display:none !important; }
   .timer-time, .lap-item .time, .rank-time, .podium-time, .pb-time, .history-time {
     font-family:'Barlow',sans-serif; font-variant-numeric:tabular-nums;
   }
 }
+/* 手机截图预览模式 */
+body.print-preview { overflow:auto !important; height:auto !important; }
+body.print-preview #app { height:auto !important; overflow:visible !important; }
+body.print-preview .page { overflow:visible !important; height:auto !important; flex:none !important; }
+body.print-preview .page::after { display:none !important; }
+body.print-preview .bottom-nav,
+body.print-preview .no-print { display:none !important; }
 
 /* ============================================================
    首页大卡片
@@ -527,7 +535,7 @@ body::before {
 /* ============================================================
    记录页 — 筛选下拉
    ============================================================ */
-.filter-row { display:flex; gap:8px; margin-bottom:18px; }
+.filter-row { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
 .filter-dropdown { flex:1; position:relative; }
 .filter-dropdown-btn {
   display:flex; align-items:center; justify-content:space-between; gap:4px;
@@ -1032,10 +1040,10 @@ const State = {
   timerMode:null, timerGroupId:null, timerEventId:null,
   timerRunning:false, timerStartTime:null, timerElapsed:0,
   timerLaps:[], timerRAF:null,
-  historyFilter:{groupId:null,eventId:null,yearMonth:null},
+  historyFilter:{groupId:null,eventId:null,yearMonth:null,timeRange:null,customStart:null,customEnd:null},
   profileTrendEventId:null,
   recordsSubTab:'history',
-  rankingFilter:{groupId:null,timeRange:null},
+  rankingFilter:{groupId:null,timeRange:null,customStart:null,customEnd:null},
   batchTest:{
     sessionId:null,eventId:null,groupId:null,
     selectedStudentIds:[],testedStudentIds:[],
@@ -1163,12 +1171,18 @@ async function calculateRanking(eventId,opts={}){
   return ranking;
 }
 
-function getTimeFilterDates(range){
+function getTimeFilterDates(range,customStart,customEnd){
   const now=Date.now();
   if(range==='week') return {startDate:now-7*86400000};
   if(range==='month') return {startDate:now-30*86400000};
-  if(range==='term') return {startDate:now-180*86400000};
+  if(range==='halfyear') return {startDate:now-180*86400000};
+  if(range==='year') return {startDate:now-365*86400000};
+  if(range==='custom'&&customStart) return {startDate:new Date(customStart).getTime(),endDate:customEnd?new Date(customEnd+'T23:59:59').getTime():undefined};
   return {};
+}
+function getTimeRangeLabel(range){
+  const m={'week':'近一周','month':'近一月','halfyear':'近半年','year':'近一年','custom':'自定义'};
+  return m[range]||'全部时间';
 }
 
 /* ============================================================
@@ -1544,7 +1558,7 @@ async function openStudentPicker(rank){
     return `<div class="student-picker-item ${disabled?'disabled':''} ${isC?'selected':''}"
       onclick="${disabled?'':`pickStudent('${s.id}',${rank})`}" data-search="${s.number} ${s.name}">
       <span class="num">${String(s.number).padStart(2,'0')}</span><span>${s.name}</span>
-      ${isC?'<span style="margin-left:auto;color:var(--accent);font-size:12px;font-weight:600;">✓ 已选</span>':''}
+      ${isC?'<span style="margin-left:auto;color:var(--accent);font-size:11px;font-weight:500;">✓ 点击取消</span>':''}
       ${isTested?'<span style="margin-left:auto;font-size:11px;color:var(--teal);">已测</span>':''}
       ${isOtherLap?'<span style="margin-left:auto;font-size:11px;color:var(--text-muted);">已分配</span>':''}
     </div>`;
@@ -2239,10 +2253,13 @@ async function renderHistoryList(){
   const allEvents=await DB.getAll('events');
   const months=new Set();sessions.forEach(s=>months.add(formatYM(s.date)));
   const F=State.historyFilter;
+  // 时间筛选
+  const htDates=getTimeFilterDates(F.timeRange,F.customStart,F.customEnd);
   let filtered=sessions;
   if(F.groupId) filtered=filtered.filter(s=>s.groupId===F.groupId);
   if(F.eventId) filtered=filtered.filter(s=>s.eventId===F.eventId);
-  if(F.yearMonth) filtered=filtered.filter(s=>formatYM(s.date)===F.yearMonth);
+  if(htDates.startDate) filtered=filtered.filter(s=>s.date>=htDates.startDate);
+  if(htDates.endDate) filtered=filtered.filter(s=>s.date<=htDates.endDate);
 
   const items=[];
   for(const s of filtered){
@@ -2254,9 +2271,10 @@ async function renderHistoryList(){
 
   const curGroup=F.groupId?allGroups.find(g=>g.id===F.groupId):null;
   const curEvent=F.eventId?allEvents.find(e=>e.id===F.eventId):null;
+  const hTimeLabel=getTimeRangeLabel(F.timeRange);
 
   document.getElementById('records-content').innerHTML=`
-    <div class="filter-row">
+    <div class="filter-row" style="flex-wrap:wrap;">
       <div class="filter-dropdown" id="dd-group">
         <div class="filter-dropdown-btn" onclick="toggleDropdown('dd-group')">
           <div class="dd-text"><span class="dd-label">分组</span><span class="dd-val">${curGroup?curGroup.name:'全部'}</span></div>
@@ -2277,7 +2295,17 @@ async function renderHistoryList(){
           ${allEvents.filter(e=>!e.isHidden).sort((a,b)=>{const ac=a.category==='fitness'?0:1;const bc=b.category==='fitness'?0:1;return ac!==bc?ac-bc:a.sortOrder-b.sortOrder;}).map(e=>`<div class="dd-option ${F.eventId===e.id?'active':''}" onclick="setHistoryFilter('eventId','${e.id}')"><span class="dd-check">${F.eventId===e.id?'&#10003;':''}</span>${e.name}</div>`).join('')}
         </div>
       </div>
+      <div class="filter-dropdown" id="dd-htime">
+        <div class="filter-dropdown-btn" onclick="toggleDropdown('dd-htime')">
+          <div class="dd-text"><span class="dd-label">时间</span><span class="dd-val">${hTimeLabel}</span></div>
+          <div class="dd-arrow-wrap"><span class="dd-arrow">&#9660;</span></div>
+        </div>
+        <div class="filter-dropdown-menu" id="dd-htime-menu">
+          ${[{k:null,l:'全部时间'},{k:'week',l:'近一周'},{k:'month',l:'近一月'},{k:'halfyear',l:'近半年'},{k:'year',l:'近一年'},{k:'custom',l:'自定义日期'}].map(o=>`<div class="dd-option ${F.timeRange===o.k?'active':''}" onclick="${o.k==='custom'?`showCustomDatePicker('history','')`:`setHistoryFilter('timeRange',${o.k?`'${o.k}'`:'null'})`}"><span class="dd-check">${F.timeRange===o.k?'&#10003;':''}</span>${o.l}</div>`).join('')}
+        </div>
+      </div>
     </div>
+    ${F.timeRange==='custom'&&F.customStart?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-align:center;">${F.customStart} ~ ${F.customEnd||'至今'}</div>`:''}
     ${!items.length?`<div class="empty-state" style="padding:48px 20px;"><div class="icon" style="font-size:40px;opacity:0.6;">&#128202;</div><div class="title">暂无记录</div><div class="desc">完成一次测试后记录会出现在这里</div></div>`
     :items.map(it=>{
       const dn=it.session.customName||(it.group?.name||'未知')+' · '+(it.event?.name||'未知');
@@ -2318,7 +2346,11 @@ document.addEventListener('click',function(e){
   }
 });
 
-function setHistoryFilter(key,val){State.historyFilter[key]=val;renderRecords();}
+function setHistoryFilter(key,val){
+  State.historyFilter[key]=val;
+  if(key==='timeRange'&&val!=='custom'){State.historyFilter.customStart=null;State.historyFilter.customEnd=null;}
+  renderRecords();
+}
 
 /* ============================================================
    18. 排名记录
@@ -2352,23 +2384,40 @@ async function renderEventRanking(eventId){
   const event=await DB.get('events',eventId);
   const allGroups=await DB.getAll('groups');
   const F=State.rankingFilter;
-  const timeDates=getTimeFilterDates(F.timeRange);
+  const timeDates=getTimeFilterDates(F.timeRange,F.customStart,F.customEnd);
   const ranking=await calculateRanking(eventId,{groupId:F.groupId,...timeDates});
   const isGroupFilter=!!F.groupId;
+  const curGroup=F.groupId?allGroups.find(g=>g.id===F.groupId):null;
+  const timeLabel=getTimeRangeLabel(F.timeRange);
+  State._rankEventId=eventId;
 
   document.getElementById('app').innerHTML=`
     <div class="page">
-      <div class="topbar"><button class="back" onclick="Router.navigate('/records')">&larr;</button><div class="title">${getEventEmoji(event?.name||'')} ${event?.name||''} 排名</div></div>
-      <div class="filter-bar">
-        <div class="filter-chip ${!F.groupId?'active':''}" onclick="setRankFilter('groupId',null,'${eventId}')">全部</div>
-        ${allGroups.map(g=>`<div class="filter-chip ${F.groupId===g.id?'active':''}" onclick="setRankFilter('groupId','${g.id}','${eventId}')">${g.name}</div>`).join('')}
+      <div class="topbar"><button class="back" onclick="Router.navigate('/records')">&larr;</button><div class="title">${getEventEmoji(event?.name||'')} ${event?.name||''} 排名</div>
+        <span class="action no-print" onclick="showRankExportMenu('${eventId}')">导出</span>
       </div>
-      <div class="filter-bar">
-        <div class="filter-chip ${!F.timeRange?'active':''}" onclick="setRankFilter('timeRange',null,'${eventId}')">全部时间</div>
-        <div class="filter-chip ${F.timeRange==='week'?'active':''}" onclick="setRankFilter('timeRange','week','${eventId}')">近一周</div>
-        <div class="filter-chip ${F.timeRange==='month'?'active':''}" onclick="setRankFilter('timeRange','month','${eventId}')">近一月</div>
-        <div class="filter-chip ${F.timeRange==='term'?'active':''}" onclick="setRankFilter('timeRange','term','${eventId}')">本学期</div>
+      <div class="filter-row">
+        <div class="filter-dropdown" id="rk-group">
+          <div class="filter-dropdown-btn" onclick="toggleDropdown('rk-group')">
+            <div class="dd-text"><span class="dd-label">分组</span><span class="dd-val">${curGroup?curGroup.name:'全部'}</span></div>
+            <div class="dd-arrow-wrap"><span class="dd-arrow">&#9660;</span></div>
+          </div>
+          <div class="filter-dropdown-menu" id="rk-group-menu">
+            <div class="dd-option ${!F.groupId?'active':''}" onclick="setRankFilter('groupId',null,'${eventId}')"><span class="dd-check">${!F.groupId?'&#10003;':''}</span>全部分组</div>
+            ${allGroups.map(g=>`<div class="dd-option ${F.groupId===g.id?'active':''}" onclick="setRankFilter('groupId','${g.id}','${eventId}')"><span class="dd-check">${F.groupId===g.id?'&#10003;':''}</span><span style="width:8px;height:8px;border-radius:50%;background:${g.color||'#1B998B'};flex-shrink:0;"></span>${g.name}</div>`).join('')}
+          </div>
+        </div>
+        <div class="filter-dropdown" id="rk-time">
+          <div class="filter-dropdown-btn" onclick="toggleDropdown('rk-time')">
+            <div class="dd-text"><span class="dd-label">时间</span><span class="dd-val">${timeLabel}</span></div>
+            <div class="dd-arrow-wrap"><span class="dd-arrow">&#9660;</span></div>
+          </div>
+          <div class="filter-dropdown-menu" id="rk-time-menu">
+            ${[{k:null,l:'全部时间'},{k:'week',l:'近一周'},{k:'month',l:'近一月'},{k:'year',l:'近一年'},{k:'custom',l:'自定义日期'}].map(o=>`<div class="dd-option ${F.timeRange===o.k?'active':''}" onclick="${o.k==='custom'?`showCustomDatePicker('rank','${eventId}')`:`setRankFilter('timeRange',${o.k?`'${o.k}'`:'null'},'${eventId}')`}"><span class="dd-check">${F.timeRange===o.k?'&#10003;':''}</span>${o.l}</div>`).join('')}
+          </div>
+        </div>
       </div>
+      ${F.timeRange==='custom'&&F.customStart?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-align:center;">${F.customStart} ~ ${F.customEnd||'至今'}</div>`:''}
       ${!ranking.length?`<div class="empty-state"><div class="icon">&#127941;</div><div class="title">暂无排名数据</div></div>`
       :(()=>{
         const top3=ranking.filter(x=>x.rank<=3);
@@ -2398,7 +2447,77 @@ async function renderEventRanking(eventId){
     </div>${renderNav('records')}`;
 }
 
-function setRankFilter(key,val,eid){State.rankingFilter[key]=val;renderEventRanking(eid);}
+function setRankFilter(key,val,eid){
+  State.rankingFilter[key]=val;
+  if(key==='timeRange'&&val!=='custom'){State.rankingFilter.customStart=null;State.rankingFilter.customEnd=null;}
+  renderEventRanking(eid);
+}
+
+function showCustomDatePicker(target,eid){
+  const F=target==='rank'?State.rankingFilter:State.historyFilter;
+  document.querySelectorAll('.filter-dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+  document.querySelectorAll('.filter-dropdown-btn.open').forEach(b=>b.classList.remove('open'));
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">自定义日期范围</div>
+      <div class="input-group"><label>开始日期</label><input class="input" type="date" id="custom-date-start" value="${F.customStart||''}"></div>
+      <div class="input-group"><label>结束日期（留空表示至今）</label><input class="input" type="date" id="custom-date-end" value="${F.customEnd||''}"></div>
+      <button class="btn btn-accent" onclick="applyCustomDate('${target}','${eid||''}')">确定</button>
+    </div></div>`);
+}
+
+function showRankExportMenu(eventId){
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()" style="max-width:280px;">
+      <div class="modal-title">导出排名数据</div>
+      <button class="btn btn-accent" style="margin-bottom:8px;" onclick="closeModal();exportRankingPDF('${eventId}')">导出 PDF（排名截图）</button>
+      <button class="btn btn-teal" onclick="closeModal();exportRankingExcel('${eventId}')">导出 Excel（排名表格）</button>
+    </div></div>`);
+}
+
+async function exportRankingPDF(eventId){
+  // 隐藏非打印元素，触发打印
+  showToast('正在生成PDF，请在弹出的界面中选择"保存为PDF"');
+  setTimeout(()=>window.print(),300);
+}
+
+async function exportRankingExcel(eventId){
+  const event=await DB.get('events',eventId);
+  const allGroups=await DB.getAll('groups');
+  const F=State.rankingFilter;
+  const timeDates=getTimeFilterDates(F.timeRange,F.customStart,F.customEnd);
+  const ranking=await calculateRanking(eventId,{groupId:F.groupId,...timeDates});
+  if(!ranking.length){showToast('暂无排名数据');return;}
+
+  const unitMap={ms:'',count:'个',cm:'cm',ml:'ml'};
+  const unit=unitMap[event?.unit]||'';
+  let csv='\uFEFF排名,班级,学号,姓名,成绩\n';
+  for(const item of ranking){
+    const groupName=item.group?.name||'';
+    const num=item.student?String(item.student.number).padStart(2,'0'):'';
+    const name=item.student?.name||'未知';
+    const val=formatExportValue(item.value,event)+(unit&&!['ms'].includes(event?.unit)?unit:'');
+    csv+=`${item.rank},${groupName},${num},${name},${val}\n`;
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`${event?.name||'排名'}_排名_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();showToast('Excel(CSV) 已导出');
+}
+
+function applyCustomDate(target,eid){
+  const start=document.getElementById('custom-date-start')?.value;
+  const end=document.getElementById('custom-date-end')?.value;
+  if(!start){showToast('请选择开始日期');return;}
+  closeModal();
+  if(target==='rank'){
+    State.rankingFilter.timeRange='custom';State.rankingFilter.customStart=start;State.rankingFilter.customEnd=end||null;
+    renderEventRanking(eid);
+  } else {
+    State.historyFilter.timeRange='custom';State.historyFilter.customStart=start;State.historyFilter.customEnd=end||null;
+    renderRecords();
+  }
+}
 
 /* ============================================================
    19. 分组管理
@@ -2668,7 +2787,25 @@ async function deleteRecord(rid,gid,sid){
   await DB.del('records',rid);showToast('已删除');renderStudentProfile(gid,sid);
 }
 
-function printProfile(){window.print();}
+function printProfile(){
+  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(!isMobile){window.print();return;}
+  // 手机端：进入截图预览模式
+  document.body.classList.add('print-preview');
+  const bar=document.createElement('div');
+  bar.id='print-preview-bar';
+  bar.innerHTML=`<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--accent);color:white;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;font-family:Outfit,sans-serif;">
+    <span style="font-size:14px;font-weight:600;">截图预览模式</span>
+    <button onclick="exitPrintPreview()" style="background:white;color:var(--accent);border:none;padding:6px 16px;border-radius:20px;font-weight:600;font-size:13px;cursor:pointer;">完成</button>
+  </div>
+  <div style="height:48px;"></div>`;
+  document.body.prepend(bar);
+  showToast('请长按截屏保存');
+}
+function exitPrintPreview(){
+  document.body.classList.remove('print-preview');
+  document.getElementById('print-preview-bar')?.remove();
+}
 
 async function deleteStudent(gid,sid){
   const ok=await showConfirm('删除学生','确定删除此学生吗？');if(!ok)return;
