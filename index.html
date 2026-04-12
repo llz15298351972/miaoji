@@ -224,27 +224,36 @@ body::before {
 /* ============================================================
    学生档案
    ============================================================ */
-.profile-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
-.profile-avatar { width:52px; height:52px; border-radius:var(--radius); background:linear-gradient(135deg,var(--accent),#FF8F5E); display:flex; align-items:center; justify-content:center; font-family:'Outfit',sans-serif; font-size:20px; font-weight:800; color:white; box-shadow:0 4px 12px rgba(255,107,53,0.25); }
-.profile-name { font-family:'Outfit',sans-serif; font-size:20px; font-weight:700; }
-.profile-group { font-size:12px; color:var(--text-muted); margin-top:2px; }
+/* 学生档案 — 运动员档案卡风格 */
+.profile-hero { border-radius:var(--radius); padding:20px; margin:-24px -24px 20px; position:relative; overflow:hidden; }
+.profile-hero::before { content:''; position:absolute; inset:0; background:inherit; opacity:0.12; }
+.profile-hero-inner { position:relative; display:flex; align-items:center; gap:16px; }
+.profile-avatar { width:56px; height:56px; border-radius:14px; background:rgba(255,255,255,0.25); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; font-family:'Barlow',sans-serif; font-size:22px; font-weight:800; color:white; border:2px solid rgba(255,255,255,0.3); }
+.profile-name { font-family:'Outfit',sans-serif; font-size:22px; font-weight:800; color:white; letter-spacing:-0.3px; }
+.profile-group { font-size:12px; color:rgba(255,255,255,0.75); margin-top:3px; font-weight:500; }
+.profile-stat-row { display:flex; gap:8px; margin-top:14px; position:relative; }
+.profile-stat { background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); border-radius:10px; padding:8px 12px; flex:1; text-align:center; border:1px solid rgba(255,255,255,0.12); }
+.profile-stat-val { font-family:'Barlow',sans-serif; font-size:18px; font-weight:700; color:white; }
+.profile-stat-label { font-size:10px; color:rgba(255,255,255,0.7); margin-top:1px; font-weight:500; }
 
 .pb-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
-.pb-card { background:var(--gold-light); border-radius:var(--radius-sm); padding:12px; text-align:center; border:1px solid rgba(232,163,23,0.12); }
-.pb-event { font-size:11px; color:var(--text-muted); margin-bottom:4px; font-weight:500; }
-.pb-time { font-family:'Barlow',sans-serif; font-size:16px; font-weight:600; color:var(--gold); font-variant-numeric:tabular-nums; }
+.pb-card { background:var(--bg-card); border-radius:var(--radius-sm); padding:12px 10px; text-align:center; border:1px solid rgba(26,26,46,0.06); box-shadow:var(--shadow-sm); }
+.pb-event { font-size:11px; color:var(--text-muted); margin-bottom:4px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pb-time { font-family:'Barlow',sans-serif; font-size:18px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; }
 
-.trend-chart { background:var(--bg); border-radius:var(--radius-sm); padding:16px 14px; margin-bottom:18px; }
+.trend-chart { background:var(--bg-card); border-radius:var(--radius); padding:16px 14px; margin-bottom:18px; box-shadow:var(--shadow-sm); border:1px solid rgba(26,26,46,0.04); position:relative; }
 .trend-tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
-.trend-tab { padding:4px 10px; border-radius:14px; font-size:11px; font-weight:600; cursor:pointer; border:1.5px solid var(--bg-subtle); background:var(--bg-card); color:var(--text-muted); transition:all 0.15s; }
+.trend-tab { padding:4px 10px; border-radius:14px; font-size:11px; font-weight:600; cursor:pointer; border:1.5px solid var(--bg-subtle); background:var(--bg); color:var(--text-muted); transition:all 0.15s; }
 .trend-tab.active { border-color:var(--accent); background:var(--accent-light); color:var(--accent); }
+.trend-canvas-wrap { position:relative; }
 
+.history-list { background:var(--bg-card); border-radius:var(--radius); padding:4px 14px; box-shadow:var(--shadow-sm); border:1px solid rgba(26,26,46,0.04); }
 .history-item { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid var(--bg-subtle); gap:8px; }
 .history-item:last-child { border-bottom:none; }
-.history-date { font-size:12px; color:var(--text-muted); width:55px; font-weight:500; }
-.history-event { flex:1; font-size:13px; color:var(--text-secondary); font-weight:500; }
-.history-time { font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
-.pb-tag { font-size:10px; font-weight:700; color:var(--accent); background:var(--accent-light); padding:2px 6px; border-radius:4px; margin-left:6px; }
+.history-date { font-size:11px; color:var(--text-muted); width:50px; font-weight:500; flex-shrink:0; }
+.history-event { flex:1; font-size:12px; color:var(--text-secondary); font-weight:500; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-time { font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; flex-shrink:0; }
+.pb-tag { font-size:9px; font-weight:700; color:white; background:linear-gradient(135deg,var(--accent),#FF8F5E); padding:2px 6px; border-radius:4px; margin-left:4px; flex-shrink:0; }
 
 /* 首页 */
 .setup-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow-md); padding:20px; border:1px solid rgba(26,26,46,0.04); margin-bottom:12px; cursor:pointer; transition:all 0.15s; }
@@ -403,8 +412,8 @@ body::before {
 .tested-section { margin-top:16px; padding-top:12px; border-top:1px solid var(--bg-subtle); }
 
 /* 图表tooltip */
-.chart-tooltip { position:absolute; background:var(--text-primary); color:white; padding:4px 10px; border-radius:8px; font-size:12px; font-family:'Barlow',sans-serif; font-variant-numeric:tabular-nums; pointer-events:none; white-space:nowrap; box-shadow:var(--shadow-md); z-index:10; transform:translateX(-50%); }
-.chart-tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--text-primary); }
+.chart-tooltip { position:absolute; background:var(--text-primary); color:white; padding:4px 10px; border-radius:8px; font-size:12px; font-family:'Barlow',sans-serif; font-weight:600; font-variant-numeric:tabular-nums; pointer-events:none; white-space:nowrap; box-shadow:var(--shadow-lg); z-index:10; transform:translateX(-50%); }
+.chart-tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--text-primary); }
 
 /* 铃声开关 */
 .bell-toggle { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer; padding:4px 0; }
@@ -2714,19 +2723,29 @@ async function renderStudentProfile(groupId,studentId){
   const trendEvent=trendEventId?allEvents.find(e=>e.id===trendEventId):null;
   const trendData=trendEventId?recordsWithInfo.filter(r=>r.session.eventId===trendEventId).reverse():[];
 
+  const totalTests=recordsWithInfo.length;
+  const bestCount=Object.keys(bestByEvent).length;
+
   document.getElementById('app').innerHTML=`
     <div class="page" id="profile-page">
-      <div class="topbar">
-        <button class="back no-print" onclick="Router.navigate('/groups/${groupId}')">&larr;</button>
-        <div class="title">学生档案</div>
-        <span class="action no-print" onclick="printProfile()">导出PDF</span>
-      </div>
-      <div class="profile-header">
-        <div class="profile-avatar" style="background:${group.color||'var(--accent)'};">${String(student.number).padStart(2,'0')}</div>
-        <div><div class="profile-name">${student.name}</div><div class="profile-group">${group.name}</div></div>
+      <div class="profile-hero" style="background:linear-gradient(135deg,${group.color||'#FF6B35'},${group.color?group.color+'CC':'#FF8F5E'});">
+        <div class="profile-hero-inner">
+          <button class="back no-print" onclick="Router.navigate('/groups/${groupId}')" style="position:absolute;top:0;left:0;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.2);border:none;cursor:pointer;font-size:14px;color:white;">&larr;</button>
+          <span class="action no-print" onclick="printProfile()" style="position:absolute;top:0;right:0;color:rgba(255,255,255,0.85);font-size:12px;font-weight:600;cursor:pointer;">导出PDF</span>
+          <div class="profile-avatar">${String(student.number).padStart(2,'0')}</div>
+          <div>
+            <div class="profile-name">${student.name}</div>
+            <div class="profile-group">${group.name}</div>
+          </div>
+        </div>
+        <div class="profile-stat-row">
+          <div class="profile-stat"><div class="profile-stat-val">${totalTests}</div><div class="profile-stat-label">测试次数</div></div>
+          <div class="profile-stat"><div class="profile-stat-val">${bestCount}</div><div class="profile-stat-label">参与项目</div></div>
+          <div class="profile-stat"><div class="profile-stat-val">${evIds.length?formatDateShort(recordsWithInfo[0]?.session.date):'-'}</div><div class="profile-stat-label">最近测试</div></div>
+        </div>
       </div>
 
-      ${Object.keys(bestByEvent).length?`
+      ${bestCount?`
         <div class="section-label">&#127942; 个人最佳</div>
         <div class="pb-grid">${Object.values(bestByEvent).map(r=>`
           <div class="pb-card"><div class="pb-event">${getEventEmoji(r.event?.name||'')} ${r.event?.name||''}</div><div class="pb-time">${formatValue(r.val,r.event)}</div></div>`).join('')}</div>`:''}
@@ -2736,26 +2755,28 @@ async function renderStudentProfile(groupId,studentId){
           <span>&#128200; 成绩趋势</span>
           ${trendEventId?`<span class="no-print" style="font-size:11px;color:var(--accent);cursor:pointer;text-transform:none;letter-spacing:0;" onclick="Router.navigate('/rankings/${trendEventId}')">查看排名 ▸</span>`:''}
         </div>
-        <div class="trend-chart" style="position:relative;">
+        <div class="trend-chart">
           ${evIds.length>1?`<div class="trend-tabs">${evIds.map(eid=>{
             const ev=availableEvents[eid];
             return `<div class="trend-tab ${eid===trendEventId?'active':''}" onclick="switchTrendEvent('${eid}','${groupId}','${studentId}')">${getEventEmoji(ev.event?.name||'')} ${ev.event?.name||''}</div>`;
           }).join('')}</div>`:''}
           ${trendData.length>=2?`
-            <canvas id="trend-canvas" width="300" height="120" style="width:100%;height:120px;"></canvas>
-            <div id="chart-tooltip" class="chart-tooltip" style="display:none;"></div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:6px;">
+            <div class="trend-canvas-wrap">
+              <canvas id="trend-canvas" width="300" height="130" style="width:100%;height:130px;"></canvas>
+              <div id="chart-tooltip" class="chart-tooltip" style="display:none;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:6px;padding:0 4px;">
               ${trendData.map(r=>`<span>${formatDateShort(r.session.date)}</span>`).join('')}
             </div>`
           :trendData.length===1?`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">
-              ${getEventEmoji(trendEvent?.name||'')} ${trendEvent?.name||''}: ${formatValue(getRecordValue(trendData[0],trendEvent),trendEvent)}<br>
+              ${getEventEmoji(trendEvent?.name||'')} ${trendEvent?.name||''}: <strong style="color:var(--accent);">${formatValue(getRecordValue(trendData[0],trendEvent),trendEvent)}</strong><br>
               <span style="font-size:11px;">再测一次即可看到趋势</span></div>`
           :`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">暂无数据</div>`}
         </div>`:''}
 
-      <div class="section-label">&#128197; 历史记录</div>
+      <div class="section-label">&#128197; 历史记录 <span style="font-size:11px;font-weight:400;color:var(--text-muted);letter-spacing:0;text-transform:none;">${totalTests} 条</span></div>
       ${!recordsWithInfo.length?`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">暂无测试记录</div>`
-      :recordsWithInfo.map(r=>{
+      :`<div class="history-list">${recordsWithInfo.map(r=>{
         const isBest=bestByEvent[r.session.eventId]?.id===r.id;
         return `<div class="history-item">
           <span class="history-date">${formatDateShort(r.session.date)}</span>
@@ -2763,7 +2784,7 @@ async function renderStudentProfile(groupId,studentId){
           <span class="history-time">${formatValue(getRecordValue(r,r.event),r.event)}</span>
           ${isBest?'<span class="pb-tag">PB</span>':''}
           <button class="del-btn no-print" onclick="deleteRecord('${r.id}','${groupId}','${studentId}')" title="删除" style="margin-left:4px;">✕</button>
-        </div>`;}).join('')}
+        </div>`;}).join('')}</div>`}
 
       <div style="margin-top:20px;" class="no-print">
         <button class="btn btn-danger-outline btn-sm" onclick="deleteStudent('${groupId}','${studentId}')">删除学生</button>
@@ -2844,7 +2865,7 @@ function drawTrendChart(data,event){
     if(i===pts.length-1){ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.strokeStyle='rgba(255,107,53,0.3)';ctx.lineWidth=2;ctx.stroke();}
   });
 
-  // 点击交互
+  // 点击交互 — tooltip定位在数据点正上方
   canvas._pts=pts;canvas._event=event;
   canvas.onclick=function(e){
     const cr=canvas.getBoundingClientRect();
@@ -2857,10 +2878,28 @@ function drawTrendChart(data,event){
     const tooltip=document.getElementById('chart-tooltip');
     if(closest&&minDist<30&&tooltip){
       tooltip.style.display='block';
-      tooltip.style.left=closest.x+'px';
-      tooltip.style.top=(closest.y-30)+'px';
+      // 定位：相对于canvas-wrap，确保tooltip在数据点正上方
+      const wrap=canvas.parentElement;
+      const canvasLeft=canvas.offsetLeft||0;
+      const canvasTop=canvas.offsetTop||0;
+      let tipLeft=canvasLeft+closest.x;
+      let tipTop=canvasTop+closest.y-32;
+      // 防止超出左右边界
+      const wrapW=wrap?.offsetWidth||300;
+      if(tipLeft<40) tipLeft=40;
+      if(tipLeft>wrapW-40) tipLeft=wrapW-40;
+      if(tipTop<0) tipTop=canvasTop+closest.y+12;
+      tooltip.style.left=tipLeft+'px';
+      tooltip.style.top=tipTop+'px';
       tooltip.textContent=formatValue(closest.value,this._event);
-      setTimeout(()=>{if(tooltip)tooltip.style.display='none';},3000);
+      // 高亮当前点
+      const ctx2=canvas.getContext('2d');
+      const dpr2=window.devicePixelRatio||1;
+      ctx2.save();ctx2.scale(dpr2,dpr2);
+      ctx2.beginPath();ctx2.arc(closest.x,closest.y,8,0,Math.PI*2);
+      ctx2.fillStyle='rgba(255,107,53,0.2)';ctx2.fill();
+      ctx2.restore();
+      setTimeout(()=>{if(tooltip)tooltip.style.display='none';drawTrendChart(data,event);},3000);
     } else if(tooltip){tooltip.style.display='none';}
   };
 }
