@@ -166,6 +166,13 @@ body::before {
 .btn-stop { flex:1; padding:16px; border-radius:var(--radius); border:2px solid var(--danger); background:var(--danger-light); color:var(--danger); font-family:'Outfit',sans-serif; font-size:15px; font-weight:600; cursor:pointer; }
 .btn-lap { flex:2; padding:16px; border-radius:var(--radius); border:none; background:linear-gradient(135deg,var(--accent),#FF8F5E); color:white; font-family:'Outfit',sans-serif; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(255,107,53,0.3); }
 .btn-lap:active { transform:scale(0.97); }
+/* 超大计次按钮：手机盲按友好 */
+.btn-lap.btn-lap-big { flex:3; padding:32px 16px; font-size:24px; letter-spacing:2px; box-shadow:0 8px 24px rgba(255,107,53,0.38); }
+.btn-lap.btn-lap-big:active { transform:scale(0.96); box-shadow:0 4px 12px rgba(255,107,53,0.35); }
+@media (max-width:480px){
+  .btn-lap.btn-lap-big { padding:40px 16px; font-size:28px; }
+  .timer-actions:has(.btn-lap-big) .btn-stop { flex:0 0 80px; font-size:13px; padding:12px 8px; }
+}
 .btn-start { width:100%; padding:18px; border-radius:var(--radius); border:none; background:linear-gradient(135deg,var(--accent),#FF8F5E); color:white; font-family:'Outfit',sans-serif; font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 6px 20px rgba(255,107,53,0.3); }
 .btn-reset { flex:1; padding:16px; border-radius:var(--radius); border:1.5px solid var(--bg-subtle); background:var(--bg-card); color:var(--text-secondary); font-family:'Outfit',sans-serif; font-size:15px; font-weight:600; cursor:pointer; }
 .btn-archive { flex:2; padding:16px; border-radius:var(--radius); border:none; background:linear-gradient(135deg,var(--teal),#24B5A5); color:white; font-family:'Outfit',sans-serif; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(27,153,139,0.25); }
@@ -636,6 +643,39 @@ body::before {
 }
 .list-rename-btn:active { background:var(--accent-light); color:var(--accent); }
 .list-rename-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; }
+/* 最近测试 chip */
+.recent-events { display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; margin-bottom:6px; scrollbar-width:none; }
+.recent-events::-webkit-scrollbar { display:none; }
+.recent-chip { flex-shrink:0; display:inline-flex; align-items:center; gap:6px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--bg-subtle); border-radius:999px; font-size:13px; font-weight:600; color:var(--text-primary); cursor:pointer; transition:all 0.15s; box-shadow:var(--shadow-sm); }
+.recent-chip:active { transform:scale(0.96); background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+.recent-chip .rc-emoji { font-size:16px; }
+/* 换分组按钮（计时页头部） */
+.switch-group-btn { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; border:1px solid var(--bg-subtle); background:var(--bg-hover); color:var(--text-secondary); font-size:13px; cursor:pointer; margin-left:8px; vertical-align:middle; padding:0; }
+.switch-group-btn:active { background:var(--accent-light); color:var(--accent); border-color:var(--accent); }
+.switch-group-row { display:flex; align-items:center; gap:10px; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--bg-subtle); margin-bottom:8px; cursor:pointer; }
+.switch-group-row:active { background:var(--bg-hover); }
+.switch-group-row.current { opacity:0.55; cursor:default; background:var(--bg-subtle); }
+.switch-group-row .gs-avatar { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; }
+.switch-group-row .gs-arrow { color:var(--text-muted); font-size:14px; }
+/* 未完成测试删除按钮 */
+.incomplete-del { width:28px; height:28px; border-radius:50%; border:1px solid var(--bg-subtle); background:var(--bg-card); color:var(--text-muted); font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; flex-shrink:0; }
+.incomplete-del:active { background:var(--danger-light); color:var(--danger); border-color:var(--danger); }
+/* 历史记录多选模式 */
+.history-card { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.history-card.selecting { padding-left:8px; }
+.history-card .hc-check { display:none; width:22px; height:22px; border-radius:50%; border:2px solid var(--bg-subtle); background:var(--bg-card); flex-shrink:0; align-items:center; justify-content:center; font-size:12px; color:white; font-weight:700; }
+.history-card.selecting .hc-check { display:inline-flex; }
+.history-card.selected { border-color:var(--accent); background:var(--accent-light); }
+.history-card.selected .hc-check { background:var(--accent); border-color:var(--accent); }
+.history-card.selecting .hc-actions { display:none; }
+.batch-action-bar { position:fixed; left:0; right:0; bottom:0; z-index:40; background:var(--bg-card); border-top:1px solid var(--bg-subtle); padding:12px 16px calc(12px + var(--safe-bottom)); display:flex; gap:8px; align-items:center; box-shadow:0 -4px 14px rgba(26,26,46,0.08); }
+.batch-action-bar .bab-info { flex:1; font-size:13px; font-weight:600; color:var(--text-primary); }
+.batch-action-bar .bab-btn { padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--bg-subtle); background:var(--bg-card); font-size:13px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
+.batch-action-bar .bab-btn.danger { background:var(--danger); color:white; border-color:var(--danger); }
+.batch-action-bar .bab-btn.danger:disabled { opacity:0.5; cursor:not-allowed; }
+/* 编辑成绩入口 */
+.edit-record-btn { width:24px; height:24px; border-radius:50%; border:none; background:var(--bg-subtle); color:var(--text-secondary); cursor:pointer; font-size:11px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin-left:4px; }
+.edit-record-btn:active { background:var(--accent-light); color:var(--accent); }
 
 /* ============================================================
    记录页 — 排名入口（赛事板风格）
@@ -880,6 +920,21 @@ function playBeep(duration=600, frequency=880) {
     osc.start(); osc.stop(ctx.currentTime+duration/1000);
   } catch(e){}
 }
+// 计次触感：安卓震动，iOS 等不支持 vibrate 的设备播放极短滴声
+function hapticTick(){
+  if(typeof navigator.vibrate==='function'){
+    try{ navigator.vibrate(30); return; }catch(e){}
+  }
+  try{
+    const ctx=getAudioCtx();
+    const osc=ctx.createOscillator(); const gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value=1400; osc.type='sine';
+    gain.gain.setValueAtTime(0.35,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.05);
+    osc.start(); osc.stop(ctx.currentTime+0.05);
+  }catch(e){}
+}
 
 function getUnitLabel(event) {
   if(!event) return '';
@@ -1043,6 +1098,7 @@ const State = {
   timerRunning:false, timerStartTime:null, timerElapsed:0,
   timerLaps:[], timerRAF:null,
   historyFilter:{groupId:null,eventId:null,yearMonth:null,timeRange:null,customStart:null,customEnd:null},
+  historySelection:{active:false,ids:new Set(),visible:[]},
   profileTrendEventId:null,
   recordsSubTab:'history',
   rankingFilter:{groupId:null,timeRange:null,customStart:null,customEnd:null},
@@ -1193,10 +1249,22 @@ function getTimeRangeLabel(range){
 async function renderHome() {
   const groups=await DB.getAll('groups');
   if(!groups.length){Router.navigate('/welcome');return;}
-  // 查找未完成的测试
+  // 查找未完成的测试（并自动修复：若已测人数>=该分组学生数，回写为 completed）
   const allSessions=await DB.getAll('sessions');
-  const incomplete=allSessions.filter(s=>s.status==='incomplete');
+  const allStudents=await DB.getAll('students');
   const allEvents=await DB.getAll('events');
+  const incomplete=[];
+  for(const s of allSessions){
+    if(s.status!=='incomplete') continue;
+    const groupTotal=allStudents.filter(x=>x.groupId===s.groupId).length;
+    const testedLen=(s.testedStudentIds||[]).length;
+    if(groupTotal>0 && testedLen>=groupTotal){
+      s.status='completed';
+      await DB.put('sessions',s);
+      continue;
+    }
+    incomplete.push(s);
+  }
 
   document.getElementById('app').innerHTML=`
     <div class="page">
@@ -1220,12 +1288,24 @@ async function renderHome() {
         ${incomplete.map(s=>{
           const g=groups.find(x=>x.id===s.groupId);
           const e=allEvents.find(x=>x.id===s.eventId);
+          const total=allStudents.filter(x=>x.groupId===s.groupId).length;
+          const tested=(s.testedStudentIds||[]).length;
           return `<div class="list-item" onclick="resumeTest('${s.id}')">
             <div class="emoji-icon">${getEventEmoji(e?.name||'')}</div>
-            <div class="info"><div class="name">${g?.name||'未知'} · ${e?.name||'未知'}</div><div class="meta">${formatDate(s.date)} <span class="status-tag incomplete">未完成</span></div></div>
-            <div class="arrow">&#10095;</div>
+            <div class="info"><div class="name">${g?.name||'未知'} · ${e?.name||'未知'}</div><div class="meta">${formatDate(s.date)} · ${tested}/${total} 人 <span class="status-tag incomplete">未完成</span></div></div>
+            <button class="incomplete-del no-print" onclick="event.stopPropagation();deleteIncompleteSession('${s.id}')" title="删除">✕</button>
           </div>`;}).join('')}`:''}
     </div>${renderNav('timer')}`;
+}
+
+async function deleteIncompleteSession(sid){
+  const ok=await showConfirm('删除未完成测试','确定删除这条未完成的测试记录吗？已保存的成绩会一起清除。');
+  if(!ok)return;
+  const recs=await DB.getRecordsBySession(sid);
+  for(const r of recs) await DB.del('records',r.id);
+  await DB.del('sessions',sid);
+  showToast('已删除');
+  renderHome();
 }
 
 async function selectGroup(gid){State.timerGroupId=gid;Router.navigate('/timer/group');}
@@ -1235,11 +1315,33 @@ async function renderEventSelect() {
   const standard=events.filter(e=>(e.category||'standard')==='standard');
   const fitness=events.filter(e=>e.category==='fitness');
 
+  // 最近测试的 5 个不同项目（按 session.date 降序去重）
+  const sessions=await DB.getAll('sessions');
+  sessions.sort((a,b)=>b.date-a.date);
+  const seen=new Set();
+  const recent=[];
+  for(const s of sessions){
+    if(seen.has(s.eventId)) continue;
+    const ev=events.find(e=>e.id===s.eventId);
+    if(!ev) continue;
+    seen.add(s.eventId);
+    recent.push(ev);
+    if(recent.length>=5) break;
+  }
+
   document.getElementById('app').innerHTML=`
     <div class="page">
       <div class="topbar"><button class="back" onclick="Router.navigate('/')">&larr;</button><div class="title">选择测试项目</div></div>
       <div class="page-subtitle" style="margin-bottom:16px;">选好项目后再选分组</div>
-      ${fitness.length?`<div class="section-label">体测项目</div>
+      ${recent.length?`<div class="section-label">&#128338; 最近测试</div>
+      <div class="recent-events">
+        ${recent.map(ev=>`
+          <div class="recent-chip" onclick="selectEventThenGroup('${ev.id}')">
+            <span class="rc-emoji">${getEventEmoji(ev.name)}</span>
+            <span class="rc-name">${ev.name}</span>
+          </div>`).join('')}
+      </div>`:''}
+      ${fitness.length?`<div class="section-label"${recent.length?' style="margin-top:16px;"':''}>体测项目</div>
       ${fitness.map(ev=>`
         <div class="list-item" onclick="selectEventThenGroup('${ev.id}')">
           <div class="emoji-icon">${getEventEmoji(ev.name)}</div>
@@ -1450,11 +1552,12 @@ async function renderTimerRun() {
     }
   }
 
+  const canSwitchGroup=(State.timerMode==='normal'||State.timerMode==='batch-fitness');
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="timer-header">
         <button class="back no-print" onclick="exitTimer()" style="width:32px;height:32px;border-radius:var(--radius-sm);background:var(--bg-subtle);border:none;cursor:pointer;font-size:14px;color:var(--text-secondary);flex-shrink:0;">&larr;</button>
-        <div class="timer-group-name" style="flex:1;">${groupName}</div>
+        <div class="timer-group-name" style="flex:1;">${groupName}${canSwitchGroup?`<button class="switch-group-btn no-print" onclick="openSwitchGroup()" title="换分组">&#8645;</button>`:''}</div>
         ${eventName?`<span class="badge badge-accent">${getEventEmoji(eventName)} ${eventName}</span>`:''}
       </div>
       <div class="timer-display">
@@ -1488,17 +1591,66 @@ function renderLapList(students) {
 
 function renderTimerBtns(isR,isS,isI) {
   if(isI) return `<button class="btn-start" onclick="doStart()">开始计时</button>`;
-  if(isR) return `<button class="btn-stop" onclick="doStop()">停止</button><button class="btn-lap" onclick="doLap()">计次</button>`;
+  if(isR) return `<button class="btn-stop" onclick="doStop()">停止</button><button class="btn-lap btn-lap-big" onclick="doLap()">计次</button>`;
   if(State.timerMode==='normal'||State.timerMode==='batch-fitness')
     return `<button class="btn-reset" onclick="doReset()">重置</button><button class="btn-archive" onclick="doArchive()">确认存档</button>`;
   return `<button class="btn-reset" onclick="doReset()">重置</button><button class="btn-lap" onclick="doResume()" style="flex:2">继续计时</button>`;
 }
 
-function doStart(){Timer.start();updateTimerUI();}
+function doStart(){warmupAudio();Timer.start();updateTimerUI();}
 function doStop(){Timer.stop();updateTimerUI();}
 function doResume(){Timer.start();updateTimerUI();}
-function doLap(){Timer.lap();updateLapList();}
+function doLap(){hapticTick();Timer.lap();updateLapList();}
 function doReset(){Timer.reset();renderTimerRun();}
+
+async function openSwitchGroup(){
+  const groups=await DB.getAll('groups');
+  const curGid=State.timerGroupId;
+  const allStudents=await DB.getAll('students');
+  const countByGroup={};
+  for(const s of allStudents){countByGroup[s.groupId]=(countByGroup[s.groupId]||0)+1;}
+  const isBF=State.timerMode==='batch-fitness';
+  const warnHTML=isBF
+    ? `<p style="font-size:12px;color:var(--danger);line-height:1.6;margin-bottom:12px;">分批计时测试（如体测跑步）换分组后，已保存的本轮成绩会失效，学号需要重新分配。</p>`
+    : `<p style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;">计时时间和名次会保留，但需要重新给每个名次分配学号。</p>`;
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">重新选择分组</div>
+      ${warnHTML}
+      ${groups.map(g=>`
+        <div class="switch-group-row ${g.id===curGid?'current':''}" onclick="${g.id===curGid?'':`doSwitchGroup('${g.id}')`}">
+          <div class="gs-avatar" style="background:${g.color||'#1B998B'};">${g.name.slice(0,1)}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:14px;">${g.name}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${countByGroup[g.id]||0} 名学生${g.id===curGid?' · 当前':''}</div>
+          </div>
+          ${g.id===curGid?'<span style="font-size:11px;color:var(--text-muted);">—</span>':'<div class="gs-arrow">&#10095;</div>'}
+        </div>`).join('')}
+      <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="closeModal()">取消</button>
+    </div></div>`);
+}
+
+async function doSwitchGroup(newGid){
+  if(newGid===State.timerGroupId){closeModal();return;}
+  const g=await DB.get('groups',newGid);
+  if(!g){closeModal();return;}
+  // 清空本轮所有已分配的学号（旧分组学生不适用新分组）
+  for(const lap of State.timerLaps){ lap.studentIds=[]; }
+  if(State.timerMode==='batch-fitness'){
+    // 删除之前保存到旧分组的 incomplete session 和 records
+    const BF=State.batchFitness;
+    if(BF&&BF.sessionId){
+      const recs=await DB.getRecordsBySession(BF.sessionId);
+      for(const r of recs) await DB.del('records',r.id);
+      await DB.del('sessions',BF.sessionId);
+    }
+    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[]};
+  }
+  State.timerGroupId=newGid;
+  closeModal();
+  showToast(`已换到分组：${g.name}，请重新分配学号`);
+  renderTimerRun();
+}
 
 async function exitTimer(){
   if(State.timerMode==='batch-fitness'){
@@ -2161,6 +2313,7 @@ async function renderResults(sessionId){
             <span class="rank-num">${rank}</span>
             <span class="rank-name" onclick="${r.studentIds?.[0]?pLink(r.studentIds[0]):''}">${names(r.studentIds)}</span>
             <span class="rank-time">${formatValue(getRecordValue(r,event),event)}</span>
+            <button class="edit-record-btn no-print" onclick="event.stopPropagation();editRecord('${r.id}')" title="编辑">&#9998;</button>
           </div>`;}).join('')}
       </div>
       <div class="btn-row no-print">
@@ -2311,9 +2464,16 @@ async function renderHistoryList(){
     ${!items.length?`<div class="empty-state" style="padding:48px 20px;"><div class="icon" style="font-size:40px;opacity:0.6;">&#128202;</div><div class="title">暂无记录</div><div class="desc">完成一次测试后记录会出现在这里</div></div>`
     :items.map(it=>{
       const dn=it.session.customName||(it.group?.name||'未知')+' · '+(it.event?.name||'未知');
-      const goTo=it.session.status==='incomplete'?`resumeTest('${it.session.id}')`:`Router.navigate('/results/${it.session.id}')`;
       const accentColor=it.group?.color||'var(--accent)';
-      return `<div class="history-card" style="--card-accent:${accentColor};" onclick="${goTo}">
+      const sid=it.session.id;
+      const sel=State.historySelection;
+      const checked=sel.ids.has(sid);
+      const cls='history-card'+(sel.active?' selecting':'')+(checked?' selected':'');
+      return `<div class="${cls}" data-sid="${sid}" style="--card-accent:${accentColor};"
+          onclick="handleHistoryCardClick('${sid}','${it.session.status||'completed'}')"
+          onmousedown="startHistoryLongPress('${sid}')" onmouseup="cancelHistoryLongPress()" onmouseleave="cancelHistoryLongPress()"
+          ontouchstart="startHistoryLongPress('${sid}')" ontouchend="cancelHistoryLongPress()" ontouchcancel="cancelHistoryLongPress()" ontouchmove="cancelHistoryLongPress()">
+        <div class="hc-check">${checked?'✓':''}</div>
         <div class="hc-left">${getEventEmoji(it.event?.name||'')}</div>
         <div class="hc-body">
           <div class="hc-name">${dn}</div>
@@ -2325,9 +2485,81 @@ async function renderHistoryList(){
           </div>
         </div>
         <div class="hc-actions">
-          <div class="list-rename-btn" onclick="event.stopPropagation();showRenameSessionModal('${it.session.id}')" title="重命名"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+          <div class="list-rename-btn" onclick="event.stopPropagation();showRenameSessionModal('${sid}')" title="重命名"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
         </div>
-      </div>`;}).join('')}`;
+      </div>`;}).join('')}
+    ${(()=>{
+      const sel=State.historySelection;
+      if(!sel.active) return '';
+      const visibleIds=items.map(it=>it.session.id);
+      State.historySelection.visible=visibleIds;
+      const selCount=sel.ids.size;
+      const allChecked=visibleIds.length>0&&visibleIds.every(id=>sel.ids.has(id));
+      return `<div style="height:72px;"></div>
+        <div class="batch-action-bar">
+          <button class="bab-btn" onclick="exitHistorySelect()">取消</button>
+          <button class="bab-btn" onclick="${allChecked?'clearAllHistorySel()':'selectAllHistory()'}">${allChecked?'取消全选':'全选'}</button>
+          <div class="bab-info">已选 ${selCount} 条</div>
+          <button class="bab-btn danger" ${selCount?'':'disabled'} onclick="batchDeleteHistory()">删除</button>
+        </div>`;
+    })()}`;
+}
+
+function startHistoryLongPress(sid){
+  if(State.historySelection.active) return;
+  cancelHistoryLongPress();
+  State._longPressTimer=setTimeout(()=>{
+    State.historySelection.active=true;
+    State.historySelection.ids=new Set([sid]);
+    State._justLongPressed=true;
+    hapticTick();
+    renderRecords();
+    setTimeout(()=>{State._justLongPressed=false;},400);
+  },500);
+}
+function cancelHistoryLongPress(){
+  if(State._longPressTimer){ clearTimeout(State._longPressTimer); State._longPressTimer=null; }
+}
+function handleHistoryCardClick(sid,status){
+  if(State._justLongPressed) return;
+  if(State.historySelection.active){
+    const ids=State.historySelection.ids;
+    if(ids.has(sid)) ids.delete(sid); else ids.add(sid);
+    if(ids.size===0){ exitHistorySelect(); return; }
+    renderRecords();
+    return;
+  }
+  if(status==='incomplete') resumeTest(sid);
+  else Router.navigate('/results/'+sid);
+}
+function exitHistorySelect(){
+  State.historySelection.active=false;
+  State.historySelection.ids=new Set();
+  renderRecords();
+}
+function selectAllHistory(){
+  const visible=State.historySelection.visible||[];
+  State.historySelection.ids=new Set(visible);
+  renderRecords();
+}
+function clearAllHistorySel(){
+  State.historySelection.ids=new Set();
+  renderRecords();
+}
+async function batchDeleteHistory(){
+  const ids=Array.from(State.historySelection.ids);
+  if(!ids.length) return;
+  const ok=await showConfirm('批量删除',`确定删除选中的 ${ids.length} 条记录吗？所有成绩数据会一起被删除，不可恢复。`);
+  if(!ok) return;
+  for(const sid of ids){
+    const recs=await DB.getRecordsBySession(sid);
+    for(const r of recs) await DB.del('records',r.id);
+    await DB.del('sessions',sid);
+  }
+  State.historySelection.active=false;
+  State.historySelection.ids=new Set();
+  showToast(`已删除 ${ids.length} 条`);
+  renderRecords();
 }
 
 function toggleDropdown(id){
@@ -2783,6 +3015,7 @@ async function renderStudentProfile(groupId,studentId){
           <span class="history-event">${getEventEmoji(r.event?.name||'')} ${r.event?.name||''}</span>
           <span class="history-time">${formatValue(getRecordValue(r,r.event),r.event)}</span>
           ${isBest?'<span class="pb-tag">PB</span>':''}
+          <button class="edit-record-btn no-print" onclick="editRecord('${r.id}')" title="编辑" style="margin-left:4px;">&#9998;</button>
           <button class="del-btn no-print" onclick="deleteRecord('${r.id}','${groupId}','${studentId}')" title="删除" style="margin-left:4px;">✕</button>
         </div>`;}).join('')}</div>`}
 
@@ -2798,7 +3031,105 @@ function switchTrendEvent(eid,gid,sid){State.profileTrendEventId=eid;renderStude
 
 async function deleteRecord(rid,gid,sid){
   const ok=await showConfirm('删除成绩','确定删除这条成绩记录吗？');if(!ok)return;
-  await DB.del('records',rid);showToast('已删除');renderStudentProfile(gid,sid);
+  const r=await DB.get('records',rid);
+  const sessionId=r?.sessionId;
+  await DB.del('records',rid);
+  if(sessionId) await recalcSessionRanks(sessionId);
+  showToast('已删除');renderStudentProfile(gid,sid);
+}
+
+async function recalcSessionRanks(sessionId){
+  const session=await DB.get('sessions',sessionId);
+  if(!session) return;
+  const event=await DB.get('events',session.eventId);
+  const recs=await DB.getRecordsBySession(sessionId);
+  recs.sort((a,b)=>compareValues(getRecordValue(a,event),getRecordValue(b,event),event?.rankOrder||'asc'));
+  let nr=1;
+  for(let i=0;i<recs.length;i++){
+    const val=getRecordValue(recs[i],event);
+    if(i>0 && val===getRecordValue(recs[i-1],event)) recs[i].rank=recs[i-1].rank;
+    else recs[i].rank=nr;
+    nr=recs[i].rank+1;
+    await DB.put('records',recs[i]);
+  }
+}
+
+async function editRecord(rid){
+  const record=await DB.get('records',rid);
+  if(!record){showToast('记录不存在');return;}
+  const session=await DB.get('sessions',record.sessionId);
+  const event=await DB.get('events',session.eventId);
+  const students=await DB.getStudentsByGroup(session.groupId);
+  students.sort((a,b)=>a.number-b.number);
+  const curVal=getRecordValue(record,event);
+  const curSid=(record.studentIds||[])[0];
+  const isMultiStudent=(record.studentIds||[]).length>1;
+  const unit=event?.unit||'ms';
+  const isTimeInput=(unit==='ms');
+  const valueStr=isTimeInput?formatTime(curVal):(curVal!=null?String(curVal):'');
+  const placeholder=isTimeInput?'mm:ss.cc 例如 01:23.45':'输入数值';
+  const unitLabel=getUnitLabel(event);
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">编辑成绩</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.6;">${event?.name||''} · ${formatDate(session.date)}</div>
+      <div class="input-group">
+        <label>成绩${unitLabel?'（单位：'+unitLabel+'）':''}</label>
+        <input class="input" id="edit-record-value" value="${valueStr}" placeholder="${placeholder}" autofocus>
+      </div>
+      ${isMultiStudent?`<div class="input-group">
+        <label>并列学生</label>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;padding:8px;background:var(--bg-subtle);border-radius:var(--radius-xs);">本条记录包含 ${record.studentIds.length} 位并列学生，暂不支持在此处修改学生归属，如需调整请先删除此条记录再重新录入。</div>
+      </div>`:`<div class="input-group">
+        <label>学生</label>
+        <select class="input" id="edit-record-student">
+          ${students.map(s=>`<option value="${s.id}" ${s.id===curSid?'selected':''}>${String(s.number).padStart(2,'0')} ${s.name}</option>`).join('')}
+        </select>
+      </div>`}
+      <button class="btn btn-accent" onclick="saveRecordEdit('${rid}',${isMultiStudent?'true':'false'})">保存</button>
+    </div></div>`);
+}
+
+async function saveRecordEdit(rid,isMulti){
+  const record=await DB.get('records',rid);
+  if(!record){closeModal();return;}
+  const session=await DB.get('sessions',record.sessionId);
+  const event=await DB.get('events',session.eventId);
+  const unit=event?.unit||'ms';
+  const rawVal=document.getElementById('edit-record-value')?.value?.trim();
+  if(!rawVal){showToast('请输入成绩');return;}
+  let newVal;
+  if(unit==='ms'){
+    const m=rawVal.match(/^(\d+):(\d+)\.(\d+)$/);
+    if(m) newVal=parseInt(m[1])*60000+parseInt(m[2])*1000+parseInt(m[3])*10;
+    else {
+      const n=parseFloat(rawVal);
+      if(isNaN(n)){showToast('成绩格式不正确，请用 mm:ss.cc 或纯秒数');return;}
+      newVal=Math.round(n*1000);
+    }
+    record.timeMs=newVal;
+    record.value=newVal;
+  } else {
+    const n=parseFloat(rawVal);
+    if(isNaN(n)){showToast('成绩格式不正确');return;}
+    newVal=n;
+    record.value=n;
+    record.timeMs=null;
+  }
+  if(!isMulti){
+    const newSid=document.getElementById('edit-record-student')?.value;
+    if(newSid) record.studentIds=[newSid];
+  }
+  record.updatedAt=Date.now();
+  await DB.put('records',record);
+  await recalcSessionRanks(session.id);
+  closeModal();
+  showToast('已更新');
+  const hash=location.hash;
+  let m;
+  if((m=hash.match(/\/groups\/([^/]+)\/student\/([^/]+)/))){ renderStudentProfile(m[1],m[2]); }
+  else if((m=hash.match(/\/results\/([^/]+)/))){ renderResults(m[1]); }
+  else { Router.resolve(); }
 }
 
 function printProfile(){
