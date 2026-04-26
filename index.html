@@ -1069,10 +1069,138 @@ body.history-selecting .bottom-nav { display:none !important; }
 .page::-webkit-scrollbar { display:none; }
 .page { scrollbar-width:none; }
 
+/* ============================================================
+   首页 Bauhaus 三色 Hero
+   ============================================================ */
+:root {
+  --bh-red: #D8362A;
+  --bh-yellow: #F2C03B;
+  --bh-blue: #2C4A8B;
+  --bh-ink: #161310;
+}
+.brand-row { display:flex; align-items:center; gap:14px; }
+.brand-mark {
+  width:46px; height:46px; border-radius:10px;
+  background: var(--bh-ink); color: var(--bh-yellow);
+  display:flex; align-items:center; justify-content:center;
+  font-family: var(--font-display); font-style:italic; font-weight:700;
+  font-size:26px; letter-spacing:-0.04em;
+  box-shadow: 4px 4px 0 var(--bh-red);
+  border:1.5px solid var(--bh-ink);
+}
+
+.bauhaus-hero {
+  display:grid; grid-template-columns: 1.7fr 1fr; grid-template-rows: 1fr 1fr;
+  gap:10px; height: 280px; margin-top:6px; margin-bottom:8px;
+  position:relative;
+}
+.bauhaus-hero > div {
+  position:relative; overflow:hidden; cursor:pointer;
+  border-radius:10px; padding:14px;
+  border:1.5px solid var(--bh-ink);
+  box-shadow: 4px 4px 0 var(--bh-ink);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  display:flex; flex-direction:column;
+}
+.bauhaus-hero > div:active {
+  transform: translate(2px,2px);
+  box-shadow: 2px 2px 0 var(--bh-ink);
+}
+.bh-main { grid-row: 1 / 3; }
+.bh-red { background: var(--bh-red); color:#FBF7EF; }
+.bh-blue { background: var(--bh-blue); color:#FBF7EF; }
+.bh-yellow { background: var(--bh-yellow); color: var(--bh-ink); }
+.bh-tag {
+  font-family: var(--font-body); font-size:10px; font-weight:700;
+  letter-spacing:1.6px; text-transform:uppercase;
+  opacity:0.78; line-height:1;
+}
+.bh-title {
+  font-family: var(--font-display); font-weight:700;
+  font-size:34px; line-height:0.95; letter-spacing:-0.025em;
+  margin-top: auto; margin-bottom:6px; position:relative; z-index:2;
+}
+.bh-title-sm {
+  font-family: var(--font-display); font-weight:700;
+  font-size:21px; line-height:1; letter-spacing:-0.02em;
+  margin-top: auto; position:relative; z-index:2;
+}
+.bh-sub { font-family: var(--font-body); font-size:11.5px; opacity:0.85; font-weight:500; letter-spacing:0.3px; line-height:1.55; position:relative; z-index:2; }
+
+/* 装饰几何 */
+.bh-deco { position:absolute; pointer-events:none; }
+.bh-circle {
+  width:140px; height:140px; border-radius:50%;
+  background: var(--bh-yellow);
+  top:-46px; right:-44px;
+  border:1.5px solid var(--bh-ink);
+}
+.bh-bar {
+  width:36px; height:36px; background: var(--bh-yellow);
+  top:14px; right:14px; border:1.5px solid var(--bh-ink);
+  transform: rotate(45deg);
+}
+.bh-tri {
+  width:0; height:0; top:14px; right:14px;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-bottom: 32px solid var(--bh-blue);
+  filter: drop-shadow(1px 1px 0 var(--bh-ink));
+}
+@media (max-width:380px){
+  .bauhaus-hero { height:260px; }
+  .bh-title { font-size:28px; }
+  .bh-title-sm { font-size:18px; }
+}
+
+/* 纪录保持者页 */
+.holder-card {
+  background: var(--bg-card); border:1px solid var(--hair); border-radius:13px;
+  padding:14px 16px; margin-bottom:10px; box-shadow: var(--shadow-sm);
+  display:flex; align-items:center; gap:12px; position:relative;
+  overflow:hidden;
+}
+.holder-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background: var(--gold);
+}
+.holder-card .hd-icon {
+  width:42px; height:42px; border-radius:10px;
+  background: var(--gold-light); border:1px solid var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.holder-card .hd-body { flex:1; min-width:0; }
+.holder-card .hd-event {
+  font-family: var(--font-display); font-size:14.5px; font-weight:600;
+  line-height:1.2; color: var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.holder-card .hd-meta {
+  font-family: var(--font-body); font-size:10.5px; color: var(--text-muted);
+  letter-spacing:0.4px; margin-top:4px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+}
+.holder-card .hd-meta .hd-name {
+  color: var(--accent-deep); font-weight:700; cursor:pointer;
+  text-decoration: underline; text-decoration-color: var(--accent-soft); text-underline-offset:2px;
+}
+.holder-card .hd-meta .hd-name:active { color: var(--accent); }
+.holder-card .hd-meta .hd-group { background:var(--bg); border:1px solid var(--hair); padding:1px 6px; border-radius:4px; font-weight:600; }
+.holder-card .hd-value {
+  font-family: var(--font-num); font-size:21px; font-weight:600;
+  color: var(--text-primary); flex-shrink:0; letter-spacing:-0.01em;
+  text-align:right;
+}
+.holder-card .hd-value .hd-unit {
+  font-family: var(--font-body); font-size:11px; color: var(--text-muted);
+  font-weight:600; margin-left:2px;
+}
+
 /* 打印样式补丁 */
 @media print {
   body::after { display:none; }
   .page-title::after { display:none; }
+  .bauhaus-hero { height:auto; box-shadow:none; }
 }
 </style>
 </head>
@@ -1636,25 +1764,61 @@ async function renderHome() {
     incomplete.push(s);
   }
 
+  // 最近测试 5 个不同项目（按 session 日期降序去重）
+  const sortedSessions=[...allSessions].sort((a,b)=>b.date-a.date);
+  const seenEv=new Set();
+  const recentEvents=[];
+  for(const s of sortedSessions){
+    if(seenEv.has(s.eventId))continue;
+    const ev=allEvents.find(e=>e.id===s.eventId);
+    if(!ev||ev.isHidden)continue;
+    seenEv.add(s.eventId);
+    recentEvents.push(ev);
+    if(recentEvents.length>=6)break;
+  }
+
   document.getElementById('app').innerHTML=`
     <div class="page">
       <div class="page-header">
-        <div class="page-title">秒记</div>
-        <div class="page-subtitle">体育计时统计工具</div>
-      </div>
-      <div class="home-hero">
-        <div class="home-card primary" onclick="startQuickTimer()">
-          <div class="hc-icon">&#9201;</div>
-          <div class="hc-title">傻瓜计时器</div>
-          <div class="hc-desc">不选分组，纯秒表 + 计次，数据不保存</div>
-        </div>
-        <div class="home-card secondary" onclick="Router.navigate('/timer/event')">
-          <div class="hc-icon">&#127942;</div>
-          <div class="hc-title">开始测试</div>
-          <div class="hc-desc">选择运动项目，记录成绩并生成排名</div>
+        <div class="brand-row">
+          <div class="brand-mark">秒</div>
+          <div>
+            <div class="page-title" style="margin:0;">秒记</div>
+            <div class="page-subtitle" style="margin-top:4px;">MIAOJI · SPORTS LOG</div>
+          </div>
         </div>
       </div>
-      ${incomplete.length?`<div class="section-label">&#9888;&#65039; 未完成的测试</div>
+
+      <div class="bauhaus-hero">
+        <div class="bh-main bh-red" onclick="Router.navigate('/timer/event')">
+          <div class="bh-tag">01 / 开始</div>
+          <div class="bh-title">开始测试</div>
+          <div class="bh-sub">选项目 · 选分组 · 出排名</div>
+          <div class="bh-deco bh-circle"></div>
+        </div>
+        <div class="bh-side bh-blue" onclick="Router.navigate('/holders')">
+          <div class="bh-tag">02</div>
+          <div class="bh-title-sm">纪录<br>保持者</div>
+          <div class="bh-deco bh-bar"></div>
+        </div>
+        <div class="bh-side bh-yellow" onclick="startQuickTimer()">
+          <div class="bh-tag">03</div>
+          <div class="bh-title-sm">傻瓜<br>计时器</div>
+          <div class="bh-deco bh-tri"></div>
+        </div>
+      </div>
+
+      ${recentEvents.length?`
+      <div class="section-label" style="margin-top:22px;">最近测试 · 一键开测</div>
+      <div class="recent-events" style="margin-bottom:8px;">
+        ${recentEvents.map(ev=>`
+          <div class="recent-chip" onclick="selectEventThenGroup('${ev.id}')">
+            <span class="rc-emoji">${getEventEmoji(ev.name)}</span>
+            <span>${ev.name}</span>
+          </div>`).join('')}
+      </div>`:''}
+
+      ${incomplete.length?`<div class="section-label" style="margin-top:22px;">&#9888;&#65039; 未完成的测试</div>
         ${incomplete.map(s=>{
           const g=groups.find(x=>x.id===s.groupId);
           const e=allEvents.find(x=>x.id===s.eventId);
@@ -1676,6 +1840,116 @@ async function deleteIncompleteSession(sid){
   await DB.del('sessions',sid);
   showToast('已删除');
   renderHome();
+}
+
+/* ============================================================
+   纪录保持者（按项目展示当前最佳）
+   ============================================================ */
+const HoldersFilter = { groupId: null };
+async function renderRecordHolders(){
+  const events=await DB.getAll('events');
+  const groups=await DB.getAll('groups');
+  const students=await DB.getAll('students');
+  const sessions=await DB.getAll('sessions');
+  const records=await DB.getAll('records');
+
+  const sessionMap=new Map(sessions.map(s=>[s.id,s]));
+  const studentMap=new Map(students.map(s=>[s.id,s]));
+  const groupMap=new Map(groups.map(g=>[g.id,g]));
+
+  // 收集每个项目的最佳成绩（受筛选 groupId 影响）
+  const bestByEvent={};
+  for(const r of records){
+    const session=sessionMap.get(r.sessionId);
+    if(!session) continue;
+    if(HoldersFilter.groupId && session.groupId!==HoldersFilter.groupId) continue;
+    const event=events.find(e=>e.id===session.eventId);
+    if(!event||event.isHidden) continue;
+    const val=getRecordValue(r,event);
+    if(val==null) continue;
+    const sid=(r.studentIds||[])[0];
+    if(!sid) continue;
+    const stu=studentMap.get(sid);
+    if(!stu) continue;
+    const cur=bestByEvent[event.id];
+    const better = !cur || compareValues(val,cur.val,event.rankOrder||'asc')<0;
+    if(better){
+      bestByEvent[event.id]={
+        event, val, student:stu, group:groupMap.get(stu.groupId),
+        date: session.date, recordId:r.id
+      };
+    }
+  }
+
+  // 排序：体测在前，按 sortOrder
+  const items=Object.values(bestByEvent).sort((a,b)=>{
+    const ac=a.event.category==='fitness'?0:1;
+    const bc=b.event.category==='fitness'?0:1;
+    if(ac!==bc)return ac-bc;
+    return (a.event.sortOrder||0)-(b.event.sortOrder||0);
+  });
+
+  const filterLabel = HoldersFilter.groupId
+    ? (groupMap.get(HoldersFilter.groupId)?.name||'未知分组')
+    : '全部分组';
+
+  document.getElementById('app').innerHTML=`
+    <div class="page">
+      <div class="topbar">
+        <button class="back" onclick="Router.navigate('/')">&larr;</button>
+        <div class="title">纪录保持者</div>
+      </div>
+      <div class="page-subtitle" style="margin-bottom:14px;">每个项目的当前最佳 · 按下名字看档案</div>
+
+      <div class="filter-row" style="margin-bottom:14px;">
+        <div class="filter-dropdown" id="dd-holder-group" style="flex:1;">
+          <div class="filter-dropdown-btn" onclick="toggleDropdown('dd-holder-group')">
+            <div class="dd-text">
+              <span class="dd-label">分组筛选</span>
+              <span class="dd-val">${filterLabel}</span>
+            </div>
+            <div class="dd-arrow-wrap"><span class="dd-arrow">&#9660;</span></div>
+          </div>
+          <div class="filter-dropdown-menu" id="dd-holder-group-menu">
+            <div class="dd-option ${!HoldersFilter.groupId?'active':''}" onclick="setHoldersGroup(null)">
+              <span class="dd-check">${!HoldersFilter.groupId?'&#10003;':''}</span>全部分组
+            </div>
+            ${groups.map(g=>`<div class="dd-option ${HoldersFilter.groupId===g.id?'active':''}" onclick="setHoldersGroup('${g.id}')">
+              <span class="dd-check">${HoldersFilter.groupId===g.id?'&#10003;':''}</span>
+              <span style="width:8px;height:8px;border-radius:50%;background:${g.color||'#1B998B'};flex-shrink:0;"></span>${g.name}
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      ${items.length?items.map(it=>`
+        <div class="holder-card">
+          <div class="hd-icon">${getEventEmoji(it.event.name)}</div>
+          <div class="hd-body">
+            <div class="hd-event">${it.event.name}</div>
+            <div class="hd-meta">
+              <span class="hd-name" onclick="event.stopPropagation();Router.navigate('/groups/${it.student.groupId}/student/${it.student.id}')">${it.student.name}</span>
+              <span class="hd-group">${it.group?.name||'—'}</span>
+              <span style="opacity:0.7;">${formatDateShort(it.date)}</span>
+            </div>
+          </div>
+          <div class="hd-value">${formatValue(it.val,it.event)}<span class="hd-unit"> ${getUnitLabel(it.event)}</span></div>
+        </div>
+      `).join('')
+      :`<div class="empty-state" style="padding:60px 20px;">
+          <div class="icon">🏆</div>
+          <div class="title">暂无纪录</div>
+          <div class="desc">${HoldersFilter.groupId?'该分组还没有任何测试成绩':'完成第一次测试后，纪录保持者会出现在这里'}</div>
+        </div>`}
+    </div>${renderNav('timer')}`;
+}
+
+function setHoldersGroup(gid){
+  HoldersFilter.groupId=gid;
+  // 关下拉
+  document.querySelectorAll('.filter-dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+  document.querySelectorAll('.filter-dropdown-btn.open').forEach(b=>b.classList.remove('open'));
+  renderRecordHolders();
 }
 
 async function selectGroup(gid){State.timerGroupId=gid;Router.navigate('/timer/group');}
@@ -3563,7 +3837,7 @@ async function renderStudentProfile(groupId,studentId){
             <div class="chart-track-legend">
               <span class="lg-item"><span class="lg-dot gold"></span>${(event?.rankOrder||'asc')==='asc'?'最佳成绩':'个人最高'}</span>
               <span class="lg-item"><span class="lg-dot accent"></span>最近一次</span>
-              ${(event?.rankOrder||'asc')==='asc'?`<span class="lg-item"><span class="lg-dot" style="background:var(--teal);"></span>较上次进步</span>`:''}
+              <span class="lg-item"><span class="lg-dot" style="background:var(--teal);"></span>较上次进步</span>
             </div>`
           :trendData.length===1?`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">
               ${getEventEmoji(trendEvent?.name||'')} ${trendEvent?.name||''}: <strong style="color:var(--accent);">${formatValue(getRecordValue(trendData[0],trendEvent),trendEvent)}</strong><br>
@@ -3823,29 +4097,46 @@ function drawTrendChart(data,event){
     const ly=Math.max(12,lp.y-14);
     ctx.fillText(lbl,Math.min(w-padR,Math.max(padL+8,lp.x)),ly);
   } else {
-    // ===== 计数类：保持平滑曲线 =====
+    // ===== 计数类：进步段绿/退步段灰 + 平滑曲线包络 =====
     const grad=ctx.createLinearGradient(0,padT,0,padT+ch);
-    grad.addColorStop(0,'rgba(200,65,46,0.18)');grad.addColorStop(1,'rgba(200,65,46,0)');
+    grad.addColorStop(0,'rgba(200,65,46,0.16)');grad.addColorStop(1,'rgba(200,65,46,0)');
     ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
     for(let i=1;i<pts.length;i++){const cpx=(pts[i-1].x+pts[i].x)/2;ctx.bezierCurveTo(cpx,pts[i-1].y,cpx,pts[i].y,pts[i].x,pts[i].y);}
     ctx.lineTo(pts[pts.length-1].x,padT+ch);ctx.lineTo(pts[0].x,padT+ch);ctx.closePath();
     ctx.fillStyle=grad;ctx.fill();
 
-    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
-    for(let i=1;i<pts.length;i++){const cpx=(pts[i-1].x+pts[i].x)/2;ctx.bezierCurveTo(cpx,pts[i-1].y,cpx,pts[i].y,pts[i].x,pts[i].y);}
-    ctx.strokeStyle=ACCENT;ctx.lineWidth=2.2;ctx.lineCap='round';ctx.stroke();
+    // 直线段：进步绿、退步灰、平不变=朱赤
+    for(let i=1;i<pts.length;i++){
+      const a=pts[i-1],b=pts[i];
+      const better = b.value>a.value;
+      const worse  = b.value<a.value;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle = better?TEAL : worse?'rgba(148,139,123,0.55)' : ACCENT;
+      ctx.lineWidth   = better?2.2 : 1.8;
+      ctx.lineCap='round';
+      ctx.stroke();
+    }
 
+    // 节点
     pts.forEach((p,i)=>{
       const last=i===pts.length-1;
-      if(p.isPB && !last){
-        drawStar(ctx,p.x,p.y,5,6.5,3);
+      if(p.isPB){
+        // PB 金色五角星 + 光晕（包括最新点也是 PB 的情况）
+        ctx.beginPath();ctx.arc(p.x,p.y,11,0,Math.PI*2);
+        ctx.fillStyle=GOLD_SOFT;ctx.fill();
+        drawStar(ctx,p.x,p.y,5,7,3.2);
         ctx.fillStyle=GOLD;ctx.fill();
         ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
-      } else {
-        ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fillStyle=ACCENT;ctx.fill();
         if(last){
-          ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.strokeStyle='rgba(200,65,46,0.30)';ctx.lineWidth=2;ctx.stroke();
+          // 最新点同时是 PB → 外环朱赤强调
+          ctx.beginPath();ctx.arc(p.x,p.y,14,0,Math.PI*2);
+          ctx.strokeStyle='rgba(200,65,46,0.45)';ctx.lineWidth=2;ctx.stroke();
         }
+      } else if(last){
+        ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.fillStyle=ACCENT_SOFT;ctx.fill();
+        ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fillStyle=ACCENT;ctx.fill();
+      } else {
+        ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fillStyle=MUTED;ctx.fill();
       }
     });
     // 最新值
@@ -4244,6 +4535,7 @@ Router.on('/test/select-students',renderStudentSelection);
 Router.on('/test/countdown',renderCountdownTest);
 Router.on('/test/input',renderInputTest);
 Router.on('/test/batch-timing',renderBatchTimingTest);
+Router.on('/holders',renderRecordHolders);
 
 window.addEventListener('hashchange',()=>Router.resolve());
 
