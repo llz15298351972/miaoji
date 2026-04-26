@@ -674,7 +674,8 @@ body::before {
 .history-card.selected { border-color:var(--accent); background:var(--accent-light); }
 .history-card.selected .hc-check { background:var(--accent); border-color:var(--accent); }
 .history-card.selecting .hc-actions { display:none; }
-.batch-action-bar { position:fixed; left:0; right:0; bottom:0; z-index:40; background:var(--bg-card); border-top:1px solid var(--bg-subtle); padding:12px 16px calc(12px + var(--safe-bottom)); display:flex; gap:8px; align-items:center; box-shadow:0 -4px 14px rgba(26,26,46,0.08); }
+.batch-action-bar { position:fixed; left:0; right:0; bottom:0; z-index:200; background:var(--bg-card); border-top:1px solid var(--bg-subtle); padding:12px 16px calc(12px + var(--safe-bottom)); display:flex; gap:8px; align-items:center; box-shadow:0 -4px 14px rgba(26,26,46,0.08); max-width:500px; margin:0 auto; }
+body.history-selecting .bottom-nav { display:none !important; }
 .batch-action-bar .bab-info { flex:1; font-size:13px; font-weight:600; color:var(--text-primary); }
 .batch-action-bar .bab-btn { padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--bg-subtle); background:var(--bg-card); font-size:13px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
 .batch-action-bar .bab-btn.danger { background:var(--danger); color:white; border-color:var(--danger); }
@@ -2589,9 +2590,12 @@ async function renderRecords(){
         <div class="page-title">记录</div>
         <div class="page-subtitle">${tab==='history'?'查看所有测试记录':'按项目查看排名'}</div>
       </div>
-      <div class="sub-tabs" style="margin-bottom:18px;">
-        <div class="sub-tab ${tab==='history'?'active':''}" onclick="State.recordsSubTab='history';renderRecords();">历史记录</div>
-        <div class="sub-tab ${tab==='rankings'?'active':''}" onclick="State.recordsSubTab='rankings';renderRecords();">排名记录</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+        <div class="sub-tabs" style="flex:1;margin:0;">
+          <div class="sub-tab ${tab==='history'?'active':''}" onclick="State.recordsSubTab='history';renderRecords();">历史记录</div>
+          <div class="sub-tab ${tab==='rankings'?'active':''}" onclick="State.recordsSubTab='rankings';renderRecords();">排名记录</div>
+        </div>
+        ${tab==='history'?`<button class="btn btn-outline btn-sm" onclick="enterHistorySelectMode()" style="white-space:nowrap;">批量选择</button>`:''}
       </div>
       <div id="records-content"></div>
     </div>${renderNav('records')}`;
@@ -2710,6 +2714,7 @@ function startHistoryLongPress(sid){
     State.historySelection.active=true;
     State.historySelection.ids=new Set([sid]);
     State._justLongPressed=true;
+    document.body.classList.add('history-selecting');
     hapticTick();
     renderRecords();
     setTimeout(()=>{State._justLongPressed=false;},400);
@@ -2733,6 +2738,13 @@ function handleHistoryCardClick(sid,status){
 function exitHistorySelect(){
   State.historySelection.active=false;
   State.historySelection.ids=new Set();
+  document.body.classList.remove('history-selecting');
+  renderRecords();
+}
+function enterHistorySelectMode(){
+  State.historySelection.active=true;
+  State.historySelection.ids=new Set();
+  document.body.classList.add('history-selecting');
   renderRecords();
 }
 function selectAllHistory(){
@@ -2756,6 +2768,7 @@ async function batchDeleteHistory(){
   }
   State.historySelection.active=false;
   State.historySelection.ids=new Set();
+  document.body.classList.remove('history-selecting');
   showToast(`已删除 ${ids.length} 条`);
   renderRecords();
 }
@@ -3445,11 +3458,14 @@ async function renderSettings(){
       <div class="section-label">项目管理</div>
       <div class="card">${events.map(ev=>{
         const typeLabel=ev.type==='countdown'?'倒计时':ev.type==='input'?'输入':ev.type==='batch-timing'?'分批计时':'计时';
+        const canEdit=!ev.isPreset;
         return `<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--bg-subtle);gap:6px;">
           <span style="font-size:16px;">${getEventEmoji(ev.name)}</span>
           <span style="flex:1;font-size:14px;${ev.isHidden?'color:var(--text-muted);text-decoration:line-through;':''}">${ev.name}</span>
           <span style="font-size:10px;color:var(--text-muted);background:var(--bg);padding:2px 6px;border-radius:8px;">${typeLabel}</span>
+          ${canEdit?`<button class="btn btn-sm btn-outline" style="width:auto;padding:4px 10px;font-size:11px;" onclick="showEditEventModal('${ev.id}')">编辑</button>`:''}
           <button class="btn btn-sm btn-outline" style="width:auto;padding:4px 10px;font-size:11px;" onclick="toggleEventHidden('${ev.id}')">${ev.isHidden?'显示':'隐藏'}</button>
+          ${canEdit?`<button class="btn btn-sm btn-outline" style="width:auto;padding:4px 8px;font-size:11px;color:var(--danger);border-color:var(--danger-light);" onclick="deleteCustomEvent('${ev.id}')" title="删除">✕</button>`:''}
         </div>`;}).join('')}
         <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="showAddEventModal()">+ 自定义项目</button>
       </div>
@@ -3465,6 +3481,129 @@ async function renderSettings(){
 }
 
 async function toggleEventHidden(eid){const ev=await DB.get('events',eid);ev.isHidden=!ev.isHidden;await DB.put('events',ev);renderSettings();}
+
+async function deleteCustomEvent(eid){
+  const ev=await DB.get('events',eid);
+  if(!ev||ev.isPreset){showToast('预设项目无法删除');return;}
+  // 检查是否有该项目的测试记录
+  const sessions=await DB.getAll('sessions');
+  const linked=sessions.filter(s=>s.eventId===eid);
+  const msg=linked.length
+    ? `项目"${ev.name}"下有 ${linked.length} 条测试记录。删除项目会同时删除所有相关记录和成绩，不可恢复。确定继续？`
+    : `确定删除项目"${ev.name}"吗？`;
+  const ok=await showConfirm('删除项目',msg);
+  if(!ok) return;
+  // 级联删除相关 records 和 sessions
+  for(const s of linked){
+    const recs=await DB.getRecordsBySession(s.id);
+    for(const r of recs) await DB.del('records',r.id);
+    await DB.del('sessions',s.id);
+  }
+  await DB.del('events',eid);
+  showToast('项目已删除');
+  renderSettings();
+}
+
+async function showEditEventModal(eid){
+  const ev=await DB.get('events',eid);
+  if(!ev){return;}
+  if(ev.isPreset){showToast('预设项目暂不支持编辑');return;}
+  const isCountdown=ev.type==='countdown';
+  const isCountOrLen=ev.type==='countdown'||ev.type==='input';
+  const cd=ev.countdownSeconds||60;
+  const presetCd=[30,60,120,180].includes(cd);
+  const exitMode=ev.exitMode||'incomplete';
+  const unit=ev.unit||'count';
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">编辑项目</div>
+      <input type="hidden" id="edit-event-id" value="${eid}">
+      <div class="input-group"><label>项目名称</label><input class="input" id="edit-event-name" value="${ev.name}"></div>
+
+      ${isCountdown?`
+      <div class="input-group">
+        <label>倒计时时长</label>
+        <div class="seg-row" id="edit-event-cd-seg">
+          <button type="button" class="seg-btn ${cd===30?'active':''}" data-cd="30" onclick="pickEditCdSeconds(30)">30秒</button>
+          <button type="button" class="seg-btn ${cd===60?'active':''}" data-cd="60" onclick="pickEditCdSeconds(60)">60秒</button>
+          <button type="button" class="seg-btn ${cd===120?'active':''}" data-cd="120" onclick="pickEditCdSeconds(120)">120秒</button>
+          <button type="button" class="seg-btn ${cd===180?'active':''}" data-cd="180" onclick="pickEditCdSeconds(180)">180秒</button>
+          <button type="button" class="seg-btn ${!presetCd?'active':''}" data-cd="custom" onclick="pickEditCdSeconds('custom')">自定义</button>
+        </div>
+        <input type="number" id="edit-event-cd-custom" min="1" max="3600" placeholder="输入秒数" value="${!presetCd?cd:''}" style="margin-top:8px;display:${!presetCd?'block':'none'};" class="input">
+        <input type="hidden" id="edit-event-cd-value" value="${cd}">
+      </div>`:''}
+
+      ${isCountOrLen?`
+      <div class="input-group">
+        <label>计数单位</label>
+        <div class="seg-row" id="edit-event-unit-seg">
+          <button type="button" class="seg-btn ${unit==='count'?'active':''}" data-unit="count" onclick="pickEditUnit('count')">个</button>
+          <button type="button" class="seg-btn ${unit==='cm'?'active':''}" data-unit="cm" onclick="pickEditUnit('cm')">cm</button>
+          <button type="button" class="seg-btn ${unit==='ml'?'active':''}" data-unit="ml" onclick="pickEditUnit('ml')">ml</button>
+        </div>
+        <input type="hidden" id="edit-event-unit-value" value="${unit}">
+        <p style="font-size:11px;color:var(--text-muted);margin:6px 0 0;">已有成绩的数值不会被换算，仅显示单位会变。</p>
+      </div>`:''}
+
+      <div class="input-group">
+        <label>中途退出处理</label>
+        <div class="seg-row">
+          <button type="button" class="seg-btn ${exitMode==='incomplete'?'active':''}" data-exit="incomplete" onclick="pickEditExitMode('incomplete')">标记未完成</button>
+          <button type="button" class="seg-btn ${exitMode==='direct'?'active':''}" data-exit="direct" onclick="pickEditExitMode('direct')">直接出成绩</button>
+        </div>
+        <input type="hidden" id="edit-event-exit-value" value="${exitMode}">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="closeModal()">取消</button>
+        <button class="btn btn-accent" onclick="saveEditEvent()">保存</button>
+      </div>
+    </div></div>`);
+}
+function pickEditCdSeconds(v){
+  document.querySelectorAll('#edit-event-cd-seg .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.cd==String(v)));
+  const customInput=document.getElementById('edit-event-cd-custom');
+  const hidden=document.getElementById('edit-event-cd-value');
+  if(v==='custom'){
+    customInput.style.display='block';
+    customInput.focus();
+    customInput.oninput=()=>{ hidden.value=customInput.value||''; };
+    if(customInput.value) hidden.value=customInput.value;
+  } else {
+    customInput.style.display='none';
+    hidden.value=String(v);
+  }
+}
+function pickEditUnit(v){
+  document.querySelectorAll('#edit-event-unit-seg .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.unit===v));
+  document.getElementById('edit-event-unit-value').value=v;
+}
+function pickEditExitMode(v){
+  document.querySelectorAll('.seg-row .seg-btn[data-exit]').forEach(b=>b.classList.toggle('active',b.dataset.exit===v));
+  document.getElementById('edit-event-exit-value').value=v;
+}
+async function saveEditEvent(){
+  const eid=document.getElementById('edit-event-id')?.value;
+  const ev=await DB.get('events',eid);
+  if(!ev){closeModal();return;}
+  const name=document.getElementById('edit-event-name')?.value?.trim();
+  if(!name){showToast('项目名称不能为空');return;}
+  ev.name=name;
+  if(ev.type==='countdown'){
+    const raw=document.getElementById('edit-event-cd-value')?.value;
+    const sec=parseInt(raw,10);
+    if(!sec||sec<=0){showToast('请填写倒计时秒数');return;}
+    ev.countdownSeconds=sec;
+  }
+  if(ev.type==='countdown'||ev.type==='input'){
+    const u=document.getElementById('edit-event-unit-value')?.value;
+    if(u) ev.unit=u;
+  }
+  ev.exitMode=document.getElementById('edit-event-exit-value')?.value||'incomplete';
+  await DB.put('events',ev);
+  closeModal();showToast('已保存');renderSettings();
+}
 
 function showAddEventModal(){
   document.getElementById('app').insertAdjacentHTML('beforeend',`
