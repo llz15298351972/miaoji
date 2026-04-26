@@ -676,6 +676,20 @@ body::before {
 /* 编辑成绩入口 */
 .edit-record-btn { width:24px; height:24px; border-radius:50%; border:none; background:var(--bg-subtle); color:var(--text-secondary); cursor:pointer; font-size:11px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin-left:4px; }
 .edit-record-btn:active { background:var(--accent-light); color:var(--accent); }
+/* 成绩管理区 */
+.manage-section { background:var(--bg-card); border:1px solid var(--bg-subtle); border-radius:var(--radius-sm); padding:14px; margin-top:20px; }
+.manage-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.manage-title { font-size:13px; font-weight:600; color:var(--text-secondary); letter-spacing:0.5px; }
+.btn-add-student { padding:6px 12px; border-radius:var(--radius-xs); background:var(--accent-light); color:var(--accent); border:1px solid var(--accent); font-size:12px; font-weight:600; cursor:pointer; }
+.btn-add-student:active { transform:scale(0.96); }
+.manage-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--bg-subtle); }
+.manage-row:last-child { border-bottom:none; }
+.manage-row .mr-rank { font-family:'Outfit',sans-serif; font-weight:700; font-size:13px; color:var(--text-muted); width:24px; flex-shrink:0; }
+.manage-row .mr-name { flex:1; font-size:13px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.manage-row .mr-value { font-family:'Barlow',sans-serif; font-weight:600; font-variant-numeric:tabular-nums; font-size:13px; color:var(--text-secondary); flex-shrink:0; }
+.manage-row .mr-actions { display:flex; gap:4px; flex-shrink:0; }
+.manage-row .del-btn { width:24px; height:24px; border-radius:50%; border:none; background:var(--bg-subtle); color:var(--text-muted); font-size:11px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+.manage-row .del-btn:active { background:var(--danger-light); color:var(--danger); }
 
 /* ============================================================
    记录页 — 排名入口（赛事板风格）
@@ -2316,11 +2330,127 @@ async function renderResults(sessionId){
             <button class="edit-record-btn no-print" onclick="event.stopPropagation();editRecord('${r.id}')" title="编辑">&#9998;</button>
           </div>`;}).join('')}
       </div>
-      <div class="btn-row no-print">
+      <div class="manage-section no-print">
+        <div class="manage-header">
+          <div class="manage-title">&#128221; 成绩管理</div>
+          <button class="btn-add-student" onclick="openAddRecordModal('${sessionId}')">+ 添加学生</button>
+        </div>
+        ${records.length?records.map((r,i)=>{
+          const rank=r.rank||i+1;
+          return `<div class="manage-row">
+            <span class="mr-rank">${rank}</span>
+            <span class="mr-name">${names(r.studentIds)}</span>
+            <span class="mr-value">${formatValue(getRecordValue(r,event),event)}</span>
+            <div class="mr-actions">
+              <button class="edit-record-btn" onclick="editRecord('${r.id}')" title="编辑">&#9998;</button>
+              <button class="del-btn" onclick="deleteSingleRecord('${r.id}','${sessionId}')" title="删除">✕</button>
+            </div>
+          </div>`;}).join(''):'<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px;">暂无成绩</div>'}
+      </div>
+      <div class="btn-row no-print" style="margin-top:16px;">
         <button class="btn btn-outline" onclick="exportCSV('${sessionId}')">导出CSV</button>
         <button class="btn btn-teal" onclick="Router.navigate('/records')">完成</button>
       </div>
     </div>`;
+}
+
+async function deleteSingleRecord(rid,sessionId){
+  const ok=await showConfirm('删除成绩','确定删除这条成绩吗？相应的排名和个人档案也会同步删除。');
+  if(!ok) return;
+  await DB.del('records',rid);
+  await recalcSessionRanks(sessionId);
+  // 删完检查本 session 是否还要保持 completed 状态
+  const session=await DB.get('sessions',sessionId);
+  if(session){
+    const remaining=await DB.getRecordsBySession(sessionId);
+    const testedSet=new Set();
+    for(const r of remaining){ for(const sid of (r.studentIds||[])) testedSet.add(sid); }
+    session.testedStudentIds=Array.from(testedSet);
+    const allStudents=await DB.getStudentsByGroup(session.groupId);
+    if(testedSet.size<allStudents.length) session.status='incomplete';
+    await DB.put('sessions',session);
+  }
+  showToast('已删除');
+  renderResults(sessionId);
+}
+
+async function openAddRecordModal(sessionId){
+  const session=await DB.get('sessions',sessionId);
+  if(!session){return;}
+  const event=await DB.get('events',session.eventId);
+  const allStudents=await DB.getStudentsByGroup(session.groupId);
+  allStudents.sort((a,b)=>a.number-b.number);
+  // 已有 record 的学生
+  const existingRecs=await DB.getRecordsBySession(sessionId);
+  const tested=new Set();
+  for(const r of existingRecs){ for(const sid of (r.studentIds||[])) tested.add(sid); }
+  const candidates=allStudents.filter(s=>!tested.has(s.id));
+  if(!candidates.length){
+    showToast('该分组所有学生都已有成绩');
+    return;
+  }
+  const unit=event?.unit||'ms';
+  const isTimeInput=(unit==='ms');
+  const placeholder=isTimeInput?'mm:ss.cc 例如 01:23.45':'输入数值';
+  const unitLabel=getUnitLabel(event);
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">添加学生成绩</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.6;">${event?.name||''} · ${formatDate(session.date)}</div>
+      <div class="input-group">
+        <label>选择学生</label>
+        <select class="input" id="add-record-student">
+          ${candidates.map(s=>`<option value="${s.id}">${String(s.number).padStart(2,'0')} ${s.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="input-group">
+        <label>成绩${unitLabel?'（单位：'+unitLabel+'）':''}</label>
+        <input class="input" id="add-record-value" placeholder="${placeholder}" autofocus>
+      </div>
+      <button class="btn btn-accent" onclick="saveAddRecord('${sessionId}')">保存</button>
+    </div></div>`);
+}
+
+async function saveAddRecord(sessionId){
+  const session=await DB.get('sessions',sessionId);
+  const event=await DB.get('events',session.eventId);
+  const sid=document.getElementById('add-record-student')?.value;
+  const rawVal=document.getElementById('add-record-value')?.value?.trim();
+  if(!sid){showToast('请选择学生');return;}
+  if(!rawVal){showToast('请输入成绩');return;}
+  const unit=event?.unit||'ms';
+  let newVal,timeMs=null;
+  if(unit==='ms'){
+    const m=rawVal.match(/^(\d+):(\d+)\.(\d+)$/);
+    if(m) newVal=parseInt(m[1])*60000+parseInt(m[2])*1000+parseInt(m[3])*10;
+    else {
+      const n=parseFloat(rawVal);
+      if(isNaN(n)){showToast('成绩格式不正确，请用 mm:ss.cc 或纯秒数');return;}
+      newVal=Math.round(n*1000);
+    }
+    timeMs=newVal;
+  } else {
+    const n=parseFloat(rawVal);
+    if(isNaN(n)){showToast('成绩格式不正确');return;}
+    newVal=n;
+  }
+  await DB.put('records',{
+    id:uid(),sessionId:sessionId,rank:0,
+    timeMs:timeMs,value:newVal,
+    studentIds:[sid],createdAt:Date.now(),updatedAt:Date.now()
+  });
+  await recalcSessionRanks(sessionId);
+  // 更新 session.testedStudentIds 和 status
+  const allStudents=await DB.getStudentsByGroup(session.groupId);
+  const recs=await DB.getRecordsBySession(sessionId);
+  const testedSet=new Set();
+  for(const r of recs){ for(const id of (r.studentIds||[])) testedSet.add(id); }
+  session.testedStudentIds=Array.from(testedSet);
+  if(testedSet.size>=allStudents.length) session.status='completed';
+  await DB.put('sessions',session);
+  closeModal();
+  showToast('已添加');
+  renderResults(sessionId);
 }
 
 async function deleteSession(sid){
