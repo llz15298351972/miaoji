@@ -84,6 +84,12 @@ body::before {
 .btn-row { display:flex; gap:10px; }
 .btn-row .btn { flex:1; }
 
+/* 选项段（用于弹窗内单选 chip 组） */
+.seg-row { display:flex; flex-wrap:wrap; gap:6px; }
+.seg-btn { flex:1 0 auto; min-width:64px; padding:9px 10px; border:1.5px solid var(--bg-subtle); background:var(--bg-card); color:var(--text-secondary); border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; -webkit-user-select:none; user-select:none; }
+.seg-btn:active { transform:scale(0.97); }
+.seg-btn.active { border-color:var(--accent); background:var(--accent-light); color:var(--accent); }
+
 /* 输入框 */
 .input-group { margin-bottom:14px; }
 .input-group label { display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
@@ -1475,8 +1481,9 @@ async function startTest(eid){
   else if(type==='countdown'||type==='input'){
     State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
     State.batchTest.testedStudentIds=[];State.batchTest.inputValues={};State.batchTest.sessionId=null;
+    State.batchTest.selectedStudentIds=[];State.batchTest._selectionInited=false;
     Countdown.reset();
-    Router.navigate('/test/input');
+    Router.navigate('/test/select-students');
   }
 }
 
@@ -1514,7 +1521,9 @@ async function resumeTest(sessionId){
     Router.navigate('/timer/run');
   } else if(type==='countdown'||type==='input'){
     Countdown.reset();
-    Router.navigate('/test/input');
+    State.batchTest.selectedStudentIds=[];
+    State.batchTest._selectionInited=false;
+    Router.navigate('/test/select-students');
   }
 }
 
@@ -1865,12 +1874,19 @@ async function renderStudentSelection(){
   students.sort((a,b)=>a.number-b.number);
   const tested=new Set(B.testedStudentIds);
 
+  // 第一次进入时默认全选未测学生
+  if(!B._selectionInited){
+    B.selectedStudentIds=students.filter(s=>!tested.has(s.id)).map(s=>s.id);
+    B._selectionInited=true;
+  }
+
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="topbar"><button class="back" onclick="exitBatchTest()">&larr;</button><div class="title">${getEventEmoji(event?.name||'')} ${event?.name||''}</div></div>
       <div class="page-subtitle" style="margin-bottom:12px;">${group?.name||''} · 选择本轮参测学生</div>
-      <div style="margin-bottom:12px;">
+      <div style="margin-bottom:12px;display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="selectAllStudents()">全选未测</button>
+        <button class="btn btn-outline btn-sm" onclick="clearStudentSelection()">清空</button>
       </div>
       ${students.map(s=>{
         const done=tested.has(s.id);
@@ -1905,22 +1921,63 @@ function selectAllStudents(){
     renderStudentSelection();
   });
 }
+function clearStudentSelection(){
+  State.batchTest.selectedStudentIds=[];
+  renderStudentSelection();
+}
 
 async function confirmStudentSelection(){
   const ev=await DB.get('events',State.batchTest.eventId);
   const type=getEventType(ev);
-  if(type==='countdown') Router.navigate('/test/countdown');
+  if(type==='countdown'||type==='input') Router.navigate('/test/input');
   else if(type==='batch-timing') Router.navigate('/test/batch-timing');
 }
 
 async function exitBatchTest(){
   const B=State.batchTest;
-  if(B.sessionId&&B.testedStudentIds.length>0){
-    const ok=await showConfirm('退出测试','已测试的数据会保存为"未完成"状态，之后可以继续。');
-    if(!ok)return;
-    const session=await DB.get('sessions',B.sessionId);
-    if(session){session.status='incomplete';session.testedStudentIds=B.testedStudentIds;await DB.put('sessions',session);}
+  const event=B.eventId?await DB.get('events',B.eventId):null;
+  const exitMode=event?.exitMode||'incomplete';
+
+  // 没有任何已测成绩 → 直接退出
+  if(!B.sessionId||B.testedStudentIds.length===0){
+    B.countdownStarted=false;
+    Countdown.reset();
+    Router.navigate('/');
+    return;
   }
+
+  if(exitMode==='direct'){
+    const ok=await showConfirm('退出测试','已测学生会直接生成成绩排名。未测学生本轮跳过。');
+    if(!ok) return;
+    const session=await DB.get('sessions',B.sessionId);
+    if(session){
+      session.status='completed';
+      session.forceCompleted=true;
+      session.testedStudentIds=B.testedStudentIds;
+      await DB.put('sessions',session);
+      // 计算排名
+      const recs=await DB.getRecordsBySession(B.sessionId);
+      recs.sort((a,b)=>compareValues(getRecordValue(a,event),getRecordValue(b,event),event.rankOrder||'asc'));
+      let nr=1;
+      for(let i=0;i<recs.length;i++){
+        const val=getRecordValue(recs[i],event);
+        if(i>0&&val===getRecordValue(recs[i-1],event)) recs[i].rank=recs[i-1].rank;
+        else recs[i].rank=nr;
+        nr=recs[i].rank+1;
+        await DB.put('records',recs[i]);
+      }
+    }
+    B.countdownStarted=false;
+    Countdown.reset();
+    Router.navigate('/results/'+B.sessionId);
+    return;
+  }
+
+  // 默认：标记未完成
+  const ok=await showConfirm('退出测试','已测试的数据会保存为"未完成"状态，之后可以继续。');
+  if(!ok)return;
+  const session=await DB.get('sessions',B.sessionId);
+  if(session){session.status='incomplete';session.testedStudentIds=B.testedStudentIds;await DB.put('sessions',session);}
   B.countdownStarted=false;
   Countdown.reset();
   Router.navigate('/');
@@ -2025,9 +2082,15 @@ async function renderInputTest(){
   const type=getEventType(event);
   const hasCountdown=type==='countdown';
 
-  const testedCount=B.testedStudentIds.length;
-  const filledCount=students.filter(s=>B.inputValues[s.id]!=null&&!B.testedStudentIds.includes(s.id)).length;
-  const totalCount=students.length;
+  // 本轮挑选学生（兼容旧数据：未选则视为全班）
+  const selSet=new Set(B.selectedStudentIds&&B.selectedStudentIds.length?B.selectedStudentIds:students.map(s=>s.id));
+  const selectedList=students.filter(s=>selSet.has(s.id));
+  const pendingList=selectedList.filter(s=>!B.testedStudentIds.includes(s.id));
+  const testedInRound=selectedList.filter(s=>B.testedStudentIds.includes(s.id));
+
+  const filledCount=pendingList.filter(s=>B.inputValues[s.id]!=null).length;
+  const totalCount=selectedList.length;
+  const testedCount=testedInRound.length;
   const donePercent=Math.round((testedCount/Math.max(totalCount,1))*100);
 
   const isRunning=B.countdownRunning;
@@ -2063,7 +2126,7 @@ async function renderInputTest(){
         <div class="ps-text">${testedCount}/${totalCount}</div>
       </div>
 
-      ${students.filter(s=>!B.testedStudentIds.includes(s.id)).map(s=>{
+      ${pendingList.map(s=>{
         const val=B.inputValues[s.id];
         const hasFilled=val!=null&&val!=='';
         return `<div class="score-row">
@@ -2078,7 +2141,7 @@ async function renderInputTest(){
           <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
           <div class="th-count">${testedCount} 人</div>
         </div>
-        ${students.filter(s=>B.testedStudentIds.includes(s.id)).map(s=>{
+        ${testedInRound.map(s=>{
           const val=B.inputValues[s.id];
           return `<div class="score-row done">
             <span class="snum">${String(s.number).padStart(2,'0')}</span>
@@ -2086,6 +2149,8 @@ async function renderInputTest(){
             <span class="score-val">${val!=null?val+getUnitLabel(event):'--'}</span>
           </div>`;}).join('')}
       </div>`:''}
+
+      ${type==='input'||type==='countdown'?`<button class="btn btn-outline" style="margin-top:16px;" onclick="addMoreStudents()">+ 继续选择学生测试</button>`:''}
       <div style="height:72px;"></div>
     </div>
     <div class="sticky-bottom-bar">
@@ -2187,6 +2252,7 @@ function updateBatchTimingScore(sid,val){
 
 function addMoreStudents(){
   State.batchTest.selectedStudentIds=[];
+  State.batchTest._selectionInited=false;
   Router.navigate('/test/select-students');
 }
 
@@ -2198,14 +2264,16 @@ async function saveBatchScores(){
   const event=await DB.get('events',B.eventId);
   const type=getEventType(event);
 
-  // 收集有成绩的学生
+  // 收集有成绩的学生（input/countdown 也走 selectedStudentIds 范围）
   let studentsToSave=[];
+  const selIds=(B.selectedStudentIds&&B.selectedStudentIds.length)?B.selectedStudentIds:null;
   if(type==='input'||type==='countdown'){
     const allStudents=await DB.getStudentsByGroup(B.groupId);
-    studentsToSave=allStudents.filter(s=>B.inputValues[s.id]!=null&&!B.testedStudentIds.includes(s.id));
+    const scope=selIds?allStudents.filter(s=>selIds.includes(s.id)):allStudents;
+    studentsToSave=scope.filter(s=>B.inputValues[s.id]!=null&&!B.testedStudentIds.includes(s.id));
   } else {
     studentsToSave=[];
-    for(const sid of B.selectedStudentIds){
+    for(const sid of (selIds||[])){
       if(B.inputValues[sid]!=null&&!B.testedStudentIds.includes(sid)){
         studentsToSave.push({id:sid});
       }
@@ -2367,7 +2435,7 @@ async function deleteSingleRecord(rid,sessionId){
     for(const r of remaining){ for(const sid of (r.studentIds||[])) testedSet.add(sid); }
     session.testedStudentIds=Array.from(testedSet);
     const allStudents=await DB.getStudentsByGroup(session.groupId);
-    if(testedSet.size<allStudents.length) session.status='incomplete';
+    if(testedSet.size<allStudents.length && !session.forceCompleted) session.status='incomplete';
     await DB.put('sessions',session);
   }
   showToast('已删除');
@@ -3404,27 +3472,84 @@ function showAddEventModal(){
       <div class="modal-title">添加自定义项目</div>
       <div class="input-group"><label>项目名称</label><input class="input" id="new-event-name" placeholder="如：2000米" autofocus></div>
       <div class="input-group"><label>项目类型</label>
-        <select class="input" id="new-event-type">
+        <select class="input" id="new-event-type" onchange="onAddEventTypeChange()">
           <option value="timing">正向计时（跑步）</option>
           <option value="batch-timing">分批计时（体测跑步）</option>
           <option value="countdown">倒计时+输入个数</option>
           <option value="input">直接输入数值</option>
         </select>
       </div>
+
+      <div class="input-group" id="new-event-cd-row" style="display:none;">
+        <label>倒计时时长</label>
+        <div class="seg-row" id="new-event-cd-seg">
+          <button type="button" class="seg-btn" data-cd="30" onclick="pickCdSeconds(30)">30秒</button>
+          <button type="button" class="seg-btn active" data-cd="60" onclick="pickCdSeconds(60)">60秒</button>
+          <button type="button" class="seg-btn" data-cd="120" onclick="pickCdSeconds(120)">120秒</button>
+          <button type="button" class="seg-btn" data-cd="180" onclick="pickCdSeconds(180)">180秒</button>
+          <button type="button" class="seg-btn" data-cd="custom" onclick="pickCdSeconds('custom')">自定义</button>
+        </div>
+        <input type="number" id="new-event-cd-custom" min="1" max="3600" placeholder="输入秒数" style="margin-top:8px;display:none;" class="input">
+        <input type="hidden" id="new-event-cd-value" value="60">
+      </div>
+
+      <div class="input-group">
+        <label>中途退出处理</label>
+        <div class="seg-row">
+          <button type="button" class="seg-btn active" data-exit="incomplete" onclick="pickExitMode('incomplete')">标记未完成</button>
+          <button type="button" class="seg-btn" data-exit="direct" onclick="pickExitMode('direct')">直接出成绩</button>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.6;" id="new-event-exit-hint">未测完退出会保留为未完成测试，下次可继续。</p>
+        <input type="hidden" id="new-event-exit-value" value="incomplete">
+      </div>
+
       <button class="btn btn-accent" onclick="addCustomEvent()">添加</button>
     </div></div>`);
+}
+
+function onAddEventTypeChange(){
+  const t=document.getElementById('new-event-type')?.value;
+  const row=document.getElementById('new-event-cd-row');
+  if(row) row.style.display=t==='countdown'?'block':'none';
+}
+function pickCdSeconds(v){
+  document.querySelectorAll('#new-event-cd-seg .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.cd==String(v)));
+  const customInput=document.getElementById('new-event-cd-custom');
+  const hidden=document.getElementById('new-event-cd-value');
+  if(v==='custom'){
+    customInput.style.display='block';
+    customInput.focus();
+    customInput.oninput=()=>{ hidden.value=customInput.value||''; };
+    hidden.value=customInput.value||'';
+  } else {
+    customInput.style.display='none';
+    hidden.value=String(v);
+  }
+}
+function pickExitMode(v){
+  document.querySelectorAll('.seg-row .seg-btn[data-exit]').forEach(b=>b.classList.toggle('active',b.dataset.exit===v));
+  document.getElementById('new-event-exit-value').value=v;
+  const hint=document.getElementById('new-event-exit-hint');
+  if(hint) hint.textContent=v==='direct'?'未测完退出会跳过未测学生，直接根据已测成绩生成排名。':'未测完退出会保留为未完成测试，下次可继续。';
 }
 
 async function addCustomEvent(){
   const name=document.getElementById('new-event-name')?.value?.trim();
   const type=document.getElementById('new-event-type')?.value||'timing';
   if(!name){showToast('请输入项目名称');return;}
+  let cdSec=null;
+  if(type==='countdown'){
+    const raw=document.getElementById('new-event-cd-value')?.value;
+    cdSec=parseInt(raw,10);
+    if(!cdSec||cdSec<=0){showToast('请填写倒计时秒数');return;}
+  }
+  const exitMode=document.getElementById('new-event-exit-value')?.value||'incomplete';
   const events=await DB.getAll('events');
   const maxSort=Math.max(0,...events.map(e=>e.sortOrder));
   const unit=type==='countdown'?'count':type==='input'?'cm':'ms';
   const rankOrder=(type==='countdown'||type==='input')?'desc':'asc';
   const exportFormat=type==='input'||type==='countdown'?'raw':'mmss';
-  await DB.put('events',{id:uid(),name,sortOrder:maxSort+1,isPreset:false,isHidden:false,type,unit,rankOrder,countdownSeconds:type==='countdown'?60:null,exportFormat,category:'standard'});
+  await DB.put('events',{id:uid(),name,sortOrder:maxSort+1,isPreset:false,isHidden:false,type,unit,rankOrder,countdownSeconds:cdSec,exportFormat,category:'standard',exitMode});
   closeModal();showToast('项目已添加');renderSettings();
 }
 
