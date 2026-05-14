@@ -725,6 +725,17 @@ body.history-selecting .bottom-nav { display:none !important; }
 .manage-row .mr-actions { display:flex; gap:4px; flex-shrink:0; }
 .manage-row .del-btn { width:24px; height:24px; border-radius:50%; border:none; background:var(--bg-subtle); color:var(--text-muted); font-size:11px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; }
 .manage-row .del-btn:active { background:var(--danger-light); color:var(--danger); }
+.pb-badge { display:inline-block; background:#FFD700; color:#7A5C00; font-size:9px; font-weight:800; padding:1px 6px; border-radius:8px; margin-left:4px; letter-spacing:0.5px; vertical-align:middle; line-height:16px; }
+.btn-absent { font-size:10px; padding:2px 8px; border-radius:6px; background:transparent; border:1px solid var(--text-muted); color:var(--text-muted); cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.btn-absent.marked { background:rgba(220,50,50,0.08); color:var(--danger,#e53e3e); border-color:var(--danger,#e53e3e); }
+.absent-section { margin-top:14px; padding:10px 12px; background:var(--bg-subtle); border-radius:10px; }
+.absent-section-title { font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:6px; }
+.absent-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--bg-card); font-size:13px; }
+.absent-row:last-child { border-bottom:none; }
+.absent-tag { font-size:10px; color:var(--danger,#e53e3e); background:rgba(220,50,50,0.08); border:1px solid rgba(220,50,50,0.25); padding:1px 6px; border-radius:6px; flex-shrink:0; }
+.score-row .btn-edit-inline, .score-row .btn-del-inline { width:24px; height:24px; border-radius:50%; border:none; background:none; cursor:pointer; font-size:12px; color:var(--text-muted); display:inline-flex; align-items:center; justify-content:center; padding:0; flex-shrink:0; }
+.score-row .btn-edit-inline:active { background:var(--accent-light); color:var(--accent); }
+.score-row .btn-del-inline:active { background:var(--danger-light,rgba(220,50,50,0.1)); color:var(--danger,#e53e3e); }
 
 /* ============================================================
    记录页 — 排名入口（赛事板风格）
@@ -1341,7 +1352,7 @@ function renderMedalBoard(tiers, opts={}) {
         <div class="podium-avatar">${(s.name||'?').slice(0,1)}</div>
         <div class="podium-block">
           ${showGroup&&s.groupName?`<div class="podium-group">${s.groupName}</div>`:''}
-          <div class="podium-name">${s.num?s.num+' ':''}${s.name||'未分配'}</div>
+          <div class="podium-name">${s.num?s.num+' ':''}${s.name||'未分配'}${s.pb?'<span class="pb-badge">PB</span>':''}</div>
           <div class="podium-score">${s.valueStr||''}</div>
         </div>
       </div>`;}).join('')}</div>`;
@@ -1361,7 +1372,7 @@ function renderMedalBoard(tiers, opts={}) {
           <div class="medal-avatar">${(s.name||'?').slice(0,1)}</div>
           ${showGroup&&s.groupName?`<span class="medal-group">${s.groupName}</span>`:''}
           <span class="medal-num-tag">${s.num||''}</span>
-          <span class="medal-name">${s.name||'未分配'}</span>
+          <span class="medal-name">${s.name||'未分配'}${s.pb?'<span class="pb-badge">PB</span>':''}</span>
           <span class="medal-time">${s.valueStr||''}</span>
         </div>`;}).join('')}
       </div>
@@ -1606,6 +1617,7 @@ const State = {
     countdownRunning:false,countdownRemaining:0,countdownStartTime:null,countdownRAF:null,
     inputValues:{},bellEnabled:true,
     batchTimerRunning:false,batchTimerElapsed:0,batchTimerStartTime:null,batchTimerRAF:null,
+    absentStudentIds:[],
   },
 };
 
@@ -1756,7 +1768,8 @@ async function renderHome() {
     if(s.status!=='incomplete') continue;
     const groupTotal=allStudents.filter(x=>x.groupId===s.groupId).length;
     const testedLen=(s.testedStudentIds||[]).length;
-    if(groupTotal>0 && testedLen>=groupTotal){
+    const absentLen=(s.absentStudentIds||[]).length;
+    if(groupTotal>0 && testedLen+absentLen>=groupTotal){
       s.status='completed';
       await DB.put('sessions',s);
       continue;
@@ -1824,9 +1837,10 @@ async function renderHome() {
           const e=allEvents.find(x=>x.id===s.eventId);
           const total=allStudents.filter(x=>x.groupId===s.groupId).length;
           const tested=(s.testedStudentIds||[]).length;
+          const absentN=(s.absentStudentIds||[]).length;
           return `<div class="list-item" onclick="resumeTest('${s.id}')">
             <div class="emoji-icon">${getEventEmoji(e?.name||'')}</div>
-            <div class="info"><div class="name">${g?.name||'未知'} · ${e?.name||'未知'}</div><div class="meta">${formatDate(s.date)} · ${tested}/${total} 人 <span class="status-tag incomplete">未完成</span></div></div>
+            <div class="info"><div class="name">${g?.name||'未知'} · ${e?.name||'未知'}</div><div class="meta">${formatDate(s.date)} · ${tested}/${total} 人${absentN?' · '+absentN+' 缺考':''} <span class="status-tag incomplete">未完成</span></div></div>
             <button class="incomplete-del no-print" onclick="event.stopPropagation();deleteIncompleteSession('${s.id}')" title="删除">✕</button>
           </div>`;}).join('')}`:''}
     </div>${renderNav('timer')}`;
@@ -2099,13 +2113,13 @@ async function startTest(eid){
   else if(type==='batch-timing'){
     Timer.reset();
     State.timerMode='batch-fitness';
-    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[]};
+    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[],absentStudentIds:[]};
     Router.navigate('/timer/run');
   }
   else if(type==='countdown'||type==='input'){
     State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
     State.batchTest.testedStudentIds=[];State.batchTest.inputValues={};State.batchTest.sessionId=null;
-    State.batchTest.selectedStudentIds=[];State.batchTest._selectionInited=false;
+    State.batchTest.selectedStudentIds=[];State.batchTest._selectionInited=false;State.batchTest.absentStudentIds=[];
     Countdown.reset();
     Router.navigate('/test/select-students');
   }
@@ -2123,6 +2137,7 @@ async function resumeTest(sessionId){
   State.batchTest.eventId=session.eventId;
   State.batchTest.groupId=session.groupId;
   State.batchTest.testedStudentIds=session.testedStudentIds||[];
+  State.batchTest.absentStudentIds=session.absentStudentIds||[];
   State.batchTest.inputValues={};
   // 加载已有成绩
   const recs=await DB.getRecordsBySession(sessionId);
@@ -2133,6 +2148,7 @@ async function resumeTest(sessionId){
     State.batchFitness={
       sessionId:sessionId,
       testedStudentIds:session.testedStudentIds||[],
+      absentStudentIds:session.absentStudentIds||[],
       testedRecords:[]
     };
     // 加载已测成绩用于底部显示
@@ -2171,32 +2187,52 @@ async function renderTimerRun() {
   if(isBF){
     const BF=State.batchFitness;
     const testedIds=new Set(BF.testedStudentIds);
+    const absentIds=new Set(BF.absentStudentIds||[]);
     const testedCount=testedIds.size;
+    const absentCount=absentIds.size;
     const totalCount=students.length;
-    if(testedCount>0){
-      const donePercent=Math.round((testedCount/Math.max(totalCount,1))*100);
-      // 按成绩排序显示
-      const sortedRecs=[...BF.testedRecords].sort((a,b)=>a.timeMs-b.timeMs);
-      bfTestedHTML=`
-        <div class="progress-strip" style="margin-top:16px;">
-          <div class="ps-label">进度</div>
-          <div class="ps-bar"><div class="ps-fill" style="width:${donePercent}%;"></div></div>
-          <div class="ps-text">${testedCount}/${totalCount}</div>
+    const donePercent=Math.round(((testedCount+absentCount)/Math.max(totalCount,1))*100);
+    const sortedRecs=[...BF.testedRecords].sort((a,b)=>a.timeMs-b.timeMs);
+    const untestedList=students.filter(s=>!testedIds.has(s.id)&&!absentIds.has(s.id));
+    const absentList=students.filter(s=>absentIds.has(s.id));
+    bfTestedHTML=`
+      <div class="progress-strip" style="margin-top:16px;">
+        <div class="ps-label">进度</div>
+        <div class="ps-bar"><div class="ps-fill" style="width:${donePercent}%;"></div></div>
+        <div class="ps-text">${testedCount}${absentCount?'+'+absentCount+'缺':''}/${totalCount}</div>
+      </div>
+      ${testedCount>0?`<div class="tested-section">
+        <div class="tested-header">
+          <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
+          <div class="th-count">${testedCount} 人</div>
         </div>
-        <div class="tested-section">
-          <div class="tested-header">
-            <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
-            <div class="th-count">${testedCount} 人</div>
-          </div>
-          ${sortedRecs.map((rec,i)=>{
-            const s=students.find(x=>x.id===rec.studentId);
-            return `<div class="score-row done">
-              <span class="snum">${String(s?.number||0).padStart(2,'0')}</span>
-              <span class="sname">${s?.name||'未知'}</span>
-              <span class="score-val">${formatTime(rec.timeMs)}</span>
-            </div>`;}).join('')}
-        </div>`;
-    }
+        ${sortedRecs.map((rec)=>{
+          const s=students.find(x=>x.id===rec.studentId);
+          return `<div class="score-row done">
+            <span class="snum">${String(s?.number||0).padStart(2,'0')}</span>
+            <span class="sname">${s?.name||'未知'}</span>
+            <span class="score-val">${formatTime(rec.timeMs)}</span>
+            <button class="btn-edit-inline no-print" onclick="editBFTestedScore('${rec.studentId}')" title="编辑">&#9998;</button>
+            <button class="btn-del-inline no-print" onclick="deleteBFTestedScore('${rec.studentId}')" title="删除">✕</button>
+          </div>`;}).join('')}
+      </div>`:''}
+      ${untestedList.length?`<div class="absent-section" style="margin-top:12px;">
+        <div class="absent-section-title">&#128101; 未测学生 · 可标缺考</div>
+        ${untestedList.map(s=>`<div class="absent-row">
+          <span class="snum">${String(s.number).padStart(2,'0')}</span>
+          <span style="flex:1;">${s.name}</span>
+          <button class="btn-absent no-print" onclick="markAbsentBF('${s.id}')">缺考</button>
+        </div>`).join('')}
+      </div>`:''}
+      ${absentList.length?`<div class="absent-section" style="margin-top:10px;">
+        <div class="absent-section-title">&#128683; 缺考学生</div>
+        ${absentList.map(s=>`<div class="absent-row">
+          <span class="snum">${String(s.number).padStart(2,'0')}</span>
+          <span style="flex:1;">${s.name}</span>
+          <span class="absent-tag">缺考</span>
+          <button class="btn-absent marked no-print" onclick="removeAbsentBF('${s.id}')">取消</button>
+        </div>`).join('')}
+      </div>`:''}`;
   }
 
   const canSwitchGroup=(State.timerMode==='normal'||State.timerMode==='batch-fitness');
@@ -2291,7 +2327,7 @@ async function doSwitchGroup(newGid){
       for(const r of recs) await DB.del('records',r.id);
       await DB.del('sessions',BF.sessionId);
     }
-    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[]};
+    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[],absentStudentIds:[]};
   }
   State.timerGroupId=newGid;
   closeModal();
@@ -2451,10 +2487,12 @@ async function doBatchFitnessArchive(){
   // 更新session
   const session=await DB.get('sessions',BF.sessionId);
   session.testedStudentIds=BF.testedStudentIds;
+  session.absentStudentIds=BF.absentStudentIds||[];
 
-  // 检查是否全部测完
+  // 检查是否全部测完（已测+缺考 >= 全班）
   const allStudents=await DB.getStudentsByGroup(State.timerGroupId);
-  if(BF.testedStudentIds.length>=allStudents.length){
+  const bfAbsentCount=(BF.absentStudentIds||[]).length;
+  if(BF.testedStudentIds.length+bfAbsentCount>=allStudents.length){
     session.status='completed';
     await DB.put('sessions',session);
     // 重新计算所有记录的排名
@@ -2750,15 +2788,19 @@ async function renderInputTest(){
         <div class="ps-text">${testedCount}/${totalCount}</div>
       </div>
 
-      ${pendingList.map(s=>{
-        const val=B.inputValues[s.id];
-        const hasFilled=val!=null&&val!=='';
-        return `<div class="score-row">
-          <span class="snum">${String(s.number).padStart(2,'0')}</span>
-          <span class="sname">${s.name}</span>
-          <input class="score-input ${hasFilled?'filled':''}" type="number" step="any" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value);this.classList.toggle('filled',!!this.value)">
-          <span class="score-unit">${getUnitLabel(event)}</span>
-        </div>`;}).join('')}
+      ${(()=>{
+        const absentIds=new Set(B.absentStudentIds||[]);
+        const activePending=pendingList.filter(s=>!absentIds.has(s.id));
+        return activePending.map(s=>{
+          const val=B.inputValues[s.id];
+          const hasFilled=val!=null&&val!=='';
+          return `<div class="score-row">
+            <span class="snum">${String(s.number).padStart(2,'0')}</span>
+            <span class="sname">${s.name}</span>
+            <input class="score-input ${hasFilled?'filled':''}" type="number" step="any" id="score-${s.id}" value="${val!=null?val:''}" placeholder="--" onchange="updateScoreInput('${s.id}',this.value);this.classList.toggle('filled',!!this.value)">
+            <span class="score-unit">${getUnitLabel(event)}</span>
+            <button class="btn-absent no-print" onclick="markAbsentBatch('${s.id}')">缺考</button>
+          </div>`;}).join('');})()}
 
       ${testedCount?`<div class="tested-section">
         <div class="tested-header">
@@ -2767,12 +2809,29 @@ async function renderInputTest(){
         </div>
         ${testedInRound.map(s=>{
           const val=B.inputValues[s.id];
+          const dispVal=val!=null?(event?.unit==='ms'?formatTime(val):val+getUnitLabel(event)):'--';
           return `<div class="score-row done">
             <span class="snum">${String(s.number).padStart(2,'0')}</span>
             <span class="sname">${s.name}</span>
-            <span class="score-val">${val!=null?val+getUnitLabel(event):'--'}</span>
+            <span class="score-val">${dispVal}</span>
+            <button class="btn-edit-inline no-print" onclick="editTestedScore('${s.id}')" title="编辑">&#9998;</button>
+            <button class="btn-del-inline no-print" onclick="deleteTestedScore('${s.id}')" title="删除">✕</button>
           </div>`;}).join('')}
       </div>`:''}
+
+      ${(()=>{
+        const absentIds=B.absentStudentIds||[];
+        if(!absentIds.length) return '';
+        const absStu=students.filter(s=>absentIds.includes(s.id));
+        return `<div class="absent-section">
+          <div class="absent-section-title">&#128683; 缺考学生</div>
+          ${absStu.map(s=>`<div class="absent-row">
+            <span class="snum">${String(s.number).padStart(2,'0')}</span>
+            <span style="flex:1;">${s.name}</span>
+            <span class="absent-tag">缺考</span>
+            <button class="btn-absent marked no-print" onclick="removeAbsentBatch('${s.id}')">取消</button>
+          </div>`).join('')}
+        </div>`;})()}
 
       ${type==='input'||type==='countdown'?`<button class="btn btn-outline" style="margin-top:16px;" onclick="addMoreStudents()">+ 继续选择学生测试</button>`:''}
       <div style="height:72px;"></div>
@@ -2859,8 +2918,34 @@ async function renderBatchTimingTest(){
           <span class="snum">${String(s.number).padStart(2,'0')}</span>
           <span class="sname">${s.name}</span>
           <span class="score-val">${formatTime(B.inputValues[s.id])}</span>
+          <button class="btn-edit-inline no-print" onclick="editTestedScore('${s.id}')" title="编辑">&#9998;</button>
+          <button class="btn-del-inline no-print" onclick="deleteTestedScore('${s.id}')" title="删除">✕</button>
         </div>`).join('')}
       </div>`:''}
+
+      ${(()=>{
+        const absentIds=new Set(B.absentStudentIds||[]);
+        const untestedOther=students.filter(s=>!B.testedStudentIds.includes(s.id)&&!B.selectedStudentIds.includes(s.id)&&!absentIds.has(s.id));
+        const absStu=students.filter(s=>absentIds.has(s.id));
+        let html='';
+        if(untestedOther.length) html+=`<div class="absent-section" style="margin-top:12px;">
+          <div class="absent-section-title">&#128101; 其他未测学生</div>
+          ${untestedOther.map(s=>`<div class="absent-row">
+            <span class="snum">${String(s.number).padStart(2,'0')}</span>
+            <span style="flex:1;">${s.name}</span>
+            <button class="btn-absent no-print" onclick="markAbsentBatch('${s.id}')">缺考</button>
+          </div>`).join('')}
+        </div>`;
+        if(absStu.length) html+=`<div class="absent-section" style="margin-top:10px;">
+          <div class="absent-section-title">&#128683; 缺考学生</div>
+          ${absStu.map(s=>`<div class="absent-row">
+            <span class="snum">${String(s.number).padStart(2,'0')}</span>
+            <span style="flex:1;">${s.name}</span>
+            <span class="absent-tag">缺考</span>
+            <button class="btn-absent marked no-print" onclick="removeAbsentBatch('${s.id}')">取消</button>
+          </div>`).join('')}
+        </div>`;
+        return html;})()}
 
       <button class="btn btn-outline" style="margin-top:16px;" onclick="addMoreStudents()">+ 继续选择学生测试</button>
     </div>`;
@@ -2907,7 +2992,7 @@ async function saveBatchScores(){
 
   // 创建或获取session
   if(!B.sessionId){
-    const session={id:uid(),groupId:B.groupId,eventId:B.eventId,date:Date.now(),status:'incomplete',customName:null,testedStudentIds:[],createdAt:Date.now()};
+    const session={id:uid(),groupId:B.groupId,eventId:B.eventId,date:Date.now(),status:'incomplete',customName:null,testedStudentIds:[],absentStudentIds:B.absentStudentIds||[],createdAt:Date.now()};
     await DB.put('sessions',session);
     B.sessionId=session.id;
   }
@@ -2927,10 +3012,12 @@ async function saveBatchScores(){
   // 更新session
   const session=await DB.get('sessions',B.sessionId);
   session.testedStudentIds=B.testedStudentIds;
+  session.absentStudentIds=B.absentStudentIds||[];
 
-  // 检查是否全部测完
+  // 检查是否全部测完（已测+缺考 >= 全班）
   const allStudents=await DB.getStudentsByGroup(B.groupId);
-  if(B.testedStudentIds.length>=allStudents.length){
+  const absentCount=(B.absentStudentIds||[]).length;
+  if(B.testedStudentIds.length+absentCount>=allStudents.length){
     session.status='completed';
     await DB.put('sessions',session);
     showToast('全部测试完成');
@@ -2974,12 +3061,30 @@ async function renderResults(sessionId){
   });
   const students=await DB.getStudentsByGroup(session.groupId);
 
+  // 预计算 PB：为每位学生检查本次成绩是否为个人最佳
+  const pbSet=new Set();
+  for(const r of records){
+    for(const sid of (r.studentIds||[])){
+      const val=getRecordValue(r,event);
+      if(val==null) continue;
+      const prevBest=await getStudentPreviousBest(sid,session.eventId,sessionId);
+      if(prevBest===null||compareValues(val,prevBest,event?.rankOrder||'asc')<0) pbSet.add(r.id+'_'+sid);
+    }
+  }
+  const isPB=(rid,sid)=>pbSet.has(rid+'_'+sid);
+
   const gn=sid=>{const s=students.find(x=>x.id===sid);return s?s.name:'未知';};
   const gnum=sid=>{const s=students.find(x=>x.id===sid);return s?String(s.number).padStart(2,'0'):'?';};
   const names=(ids)=>(ids||[]).map(gn).join('、')||'未分配';
+  const namesWithPB=(ids,rid)=>(ids||[]).map(sid=>{
+    const n=gn(sid);
+    return isPB(rid,sid)?n+'<span class="pb-badge">PB</span>':n;
+  }).join('、')||'未分配';
   const pLink=(sid)=>`Router.navigate('/groups/${session.groupId}/student/${sid}')`;
 
   const displayName=session.customName||(group?.name||'')+'·'+(event?.name||'');
+  const absentIds=session.absentStudentIds||[];
+  const absentStudents=students.filter(s=>absentIds.includes(s.id));
 
   document.getElementById('app').innerHTML=`
     <div class="page">
@@ -2993,10 +3098,9 @@ async function renderResults(sessionId){
           ${displayName}
           <span class="rename-btn no-print" onclick="showRenameSessionModal('${sessionId}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>重命名</span>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${formatDate(session.date)} ${session.status==='incomplete'?'<span class="status-tag incomplete">未完成</span>':'<span class="status-tag complete">完成</span>'}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${formatDate(session.date)} ${session.status==='incomplete'?'<span class="status-tag incomplete">未完成</span>':'<span class="status-tag complete">完成</span>'}${absentStudents.length?'<span style="margin-left:6px;font-size:11px;color:var(--danger,#e53e3e);">'+absentStudents.length+' 人缺考</span>':''}</div>
       </div>
       ${(()=>{
-        // 构建奖牌tiers（支持并列）
         const clsMap={1:'gold',2:'silver',3:'bronze'};
         const tiers=[];
         for(const r of records){
@@ -3005,7 +3109,7 @@ async function renderResults(sessionId){
           let tier=tiers.find(t=>t.rank===rank);
           if(!tier){tier={rank,cls:clsMap[rank],students:[]};tiers.push(tier);}
           for(const sid of (r.studentIds||[])){
-            tier.students.push({name:gn(sid),num:gnum(sid),id:sid,groupId:session.groupId,valueStr:formatValue(getRecordValue(r,event),event)});
+            tier.students.push({name:gn(sid),num:gnum(sid),id:sid,groupId:session.groupId,valueStr:formatValue(getRecordValue(r,event),event),pb:isPB(r.id,sid)});
           }
         }
         tiers.sort((a,b)=>a.rank-b.rank);
@@ -3017,11 +3121,19 @@ async function renderResults(sessionId){
           if(rank<=3) return '';
           return `<div class="rank-item">
             <span class="rank-num">${rank}</span>
-            <span class="rank-name" onclick="${r.studentIds?.[0]?pLink(r.studentIds[0]):''}">${names(r.studentIds)}</span>
+            <span class="rank-name" onclick="${r.studentIds?.[0]?pLink(r.studentIds[0]):''}">${namesWithPB(r.studentIds,r.id)}</span>
             <span class="rank-time">${formatValue(getRecordValue(r,event),event)}</span>
             <button class="edit-record-btn no-print" onclick="event.stopPropagation();editRecord('${r.id}')" title="编辑">&#9998;</button>
           </div>`;}).join('')}
       </div>
+      ${absentStudents.length?`<div class="absent-section" style="margin-bottom:16px;">
+        <div class="absent-section-title">&#128683; 缺考学生（${absentStudents.length} 人）</div>
+        ${absentStudents.map(s=>`<div class="absent-row">
+          <span class="snum">${String(s.number).padStart(2,'0')}</span>
+          <span style="flex:1;">${s.name}</span>
+          <span class="absent-tag">缺考</span>
+        </div>`).join('')}
+      </div>`:''}
       <div class="manage-section no-print">
         <div class="manage-header">
           <div class="manage-title">&#128221; 成绩管理</div>
@@ -3029,9 +3141,10 @@ async function renderResults(sessionId){
         </div>
         ${records.length?records.map((r,i)=>{
           const rank=r.rank||i+1;
+          const pbLabels=(r.studentIds||[]).filter(sid=>isPB(r.id,sid)).map(gn);
           return `<div class="manage-row">
             <span class="mr-rank">${rank}</span>
-            <span class="mr-name">${names(r.studentIds)}</span>
+            <span class="mr-name">${names(r.studentIds)}${pbLabels.length?'<span class="pb-badge">PB</span>':''}</span>
             <span class="mr-value">${formatValue(getRecordValue(r,event),event)}</span>
             <div class="mr-actions">
               <button class="edit-record-btn" onclick="editRecord('${r.id}')" title="编辑">&#9998;</button>
@@ -3059,7 +3172,8 @@ async function deleteSingleRecord(rid,sessionId){
     for(const r of remaining){ for(const sid of (r.studentIds||[])) testedSet.add(sid); }
     session.testedStudentIds=Array.from(testedSet);
     const allStudents=await DB.getStudentsByGroup(session.groupId);
-    if(testedSet.size<allStudents.length && !session.forceCompleted) session.status='incomplete';
+    const absentCount=(session.absentStudentIds||[]).length;
+    if(testedSet.size+absentCount<allStudents.length && !session.forceCompleted) session.status='incomplete';
     await DB.put('sessions',session);
   }
   showToast('已删除');
@@ -3138,11 +3252,266 @@ async function saveAddRecord(sessionId){
   const testedSet=new Set();
   for(const r of recs){ for(const id of (r.studentIds||[])) testedSet.add(id); }
   session.testedStudentIds=Array.from(testedSet);
-  if(testedSet.size>=allStudents.length) session.status='completed';
+  const addAbsentCount=(session.absentStudentIds||[]).length;
+  if(testedSet.size+addAbsentCount>=allStudents.length) session.status='completed';
   await DB.put('sessions',session);
   closeModal();
   showToast('已添加');
   renderResults(sessionId);
+}
+
+/* ============================================================
+   缺考标记 & 已测成绩编辑/删除（测试进行中）
+   ============================================================ */
+async function markAbsentBatch(sid){
+  const B=State.batchTest;
+  if(!B.absentStudentIds) B.absentStudentIds=[];
+  if(B.absentStudentIds.includes(sid)) return;
+  B.absentStudentIds.push(sid);
+  if(B.sessionId){
+    const session=await DB.get('sessions',B.sessionId);
+    if(session){
+      session.absentStudentIds=B.absentStudentIds;
+      const allStudents=await DB.getStudentsByGroup(session.groupId);
+      if(B.testedStudentIds.length+B.absentStudentIds.length>=allStudents.length){
+        session.status='completed';
+        await DB.put('sessions',session);
+        await recalcSessionRanks(B.sessionId);
+        showToast('测试已完成（含缺考标记）');
+        Router.navigate('/results/'+B.sessionId);
+        return;
+      }
+      await DB.put('sessions',session);
+    }
+  }
+  const ev=await DB.get('events',B.eventId);
+  const type=getEventType(ev);
+  if(type==='input'||type==='countdown') renderInputTest();
+  else renderBatchTimingTest();
+}
+
+async function removeAbsentBatch(sid){
+  const B=State.batchTest;
+  B.absentStudentIds=(B.absentStudentIds||[]).filter(x=>x!==sid);
+  if(B.sessionId){
+    const session=await DB.get('sessions',B.sessionId);
+    if(session){
+      session.absentStudentIds=B.absentStudentIds;
+      if(session.status==='completed') session.status='incomplete';
+      await DB.put('sessions',session);
+    }
+  }
+  const ev=await DB.get('events',B.eventId);
+  const type=getEventType(ev);
+  if(type==='input'||type==='countdown') renderInputTest();
+  else renderBatchTimingTest();
+}
+
+async function markAbsentBF(sid){
+  const BF=State.batchFitness;
+  if(!BF.absentStudentIds) BF.absentStudentIds=[];
+  if(BF.absentStudentIds.includes(sid)) return;
+  BF.absentStudentIds.push(sid);
+  if(BF.sessionId){
+    const session=await DB.get('sessions',BF.sessionId);
+    if(session){
+      session.absentStudentIds=BF.absentStudentIds;
+      const allStudents=await DB.getStudentsByGroup(session.groupId);
+      if(BF.testedStudentIds.length+BF.absentStudentIds.length>=allStudents.length){
+        session.status='completed';
+        await DB.put('sessions',session);
+        await recalcSessionRanks(BF.sessionId);
+        showToast('测试已完成（含缺考标记）');
+        Router.navigate('/results/'+BF.sessionId);
+        return;
+      }
+      await DB.put('sessions',session);
+    }
+  }
+  renderTimerRun();
+}
+
+async function removeAbsentBF(sid){
+  const BF=State.batchFitness;
+  BF.absentStudentIds=(BF.absentStudentIds||[]).filter(x=>x!==sid);
+  if(BF.sessionId){
+    const session=await DB.get('sessions',BF.sessionId);
+    if(session){
+      session.absentStudentIds=BF.absentStudentIds;
+      if(session.status==='completed') session.status='incomplete';
+      await DB.put('sessions',session);
+    }
+  }
+  renderTimerRun();
+}
+
+async function editTestedScore(sid){
+  const B=State.batchTest;
+  const event=await DB.get('events',B.eventId);
+  const students=await DB.getStudentsByGroup(B.groupId);
+  const s=students.find(x=>x.id===sid);
+  const curVal=B.inputValues[sid];
+  const unit=event?.unit||'ms';
+  const isMs=unit==='ms';
+  const displayVal=isMs&&curVal!=null?formatTime(curVal):(curVal!=null?String(curVal):'');
+  const placeholder=isMs?'mm:ss.cc 例如 01:23.45':'输入数值';
+  const unitLabel=getUnitLabel(event);
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">修改成绩</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">${s?.name||''}</div>
+      <div class="input-group">
+        <label>成绩${unitLabel?'（'+unitLabel+'）':''}</label>
+        <input class="input" id="edit-tested-val" value="${displayVal}" placeholder="${placeholder}" autofocus>
+      </div>
+      <button class="btn btn-accent" onclick="saveTestedScoreEdit('${sid}')">保存</button>
+    </div></div>`);
+}
+
+async function saveTestedScoreEdit(sid){
+  const B=State.batchTest;
+  const event=await DB.get('events',B.eventId);
+  const unit=event?.unit||'ms';
+  const raw=(document.getElementById('edit-tested-val')?.value||'').trim();
+  if(!raw){showToast('请输入成绩');return;}
+  let newVal;
+  if(unit==='ms'){
+    const m=raw.match(/^(\d+):(\d+)\.(\d+)$/);
+    if(m) newVal=parseInt(m[1])*60000+parseInt(m[2])*1000+parseInt(m[3])*10;
+    else{const n=parseFloat(raw);if(isNaN(n)){showToast('成绩格式不正确');return;}newVal=Math.round(n*1000);}
+  } else {
+    const n=parseFloat(raw);if(isNaN(n)){showToast('成绩格式不正确');return;}newVal=n;
+  }
+  B.inputValues[sid]=newVal;
+  if(B.sessionId){
+    const recs=await DB.getRecordsBySession(B.sessionId);
+    const rec=recs.find(r=>(r.studentIds||[]).includes(sid));
+    if(rec){
+      rec.value=newVal;
+      if(unit==='ms') rec.timeMs=newVal;
+      rec.updatedAt=Date.now();
+      await DB.put('records',rec);
+      await recalcSessionRanks(B.sessionId);
+    }
+  }
+  closeModal();
+  showToast('已更新');
+  const type=getEventType(event);
+  if(type==='input'||type==='countdown') renderInputTest();
+  else renderBatchTimingTest();
+}
+
+async function deleteTestedScore(sid){
+  const ok=await showConfirm('删除成绩','确定删除该学生的成绩吗？');
+  if(!ok) return;
+  const B=State.batchTest;
+  B.testedStudentIds=B.testedStudentIds.filter(x=>x!==sid);
+  delete B.inputValues[sid];
+  if(B.sessionId){
+    const recs=await DB.getRecordsBySession(B.sessionId);
+    const rec=recs.find(r=>(r.studentIds||[]).includes(sid));
+    if(rec){
+      await DB.del('records',rec.id);
+      const session=await DB.get('sessions',B.sessionId);
+      if(session){
+        session.testedStudentIds=B.testedStudentIds;
+        const allStudents=await DB.getStudentsByGroup(session.groupId);
+        const absentCount=(session.absentStudentIds||[]).length;
+        if(B.testedStudentIds.length+absentCount<allStudents.length&&!session.forceCompleted) session.status='incomplete';
+        await DB.put('sessions',session);
+      }
+      await recalcSessionRanks(B.sessionId);
+    }
+  }
+  showToast('已删除');
+  const ev=await DB.get('events',B.eventId);
+  const type=getEventType(ev);
+  if(type==='input'||type==='countdown') renderInputTest();
+  else renderBatchTimingTest();
+}
+
+async function editBFTestedScore(sid){
+  const BF=State.batchFitness;
+  const rec_=BF.testedRecords.find(r=>r.studentId===sid);
+  const students=await DB.getStudentsByGroup(State.timerGroupId);
+  const s=students.find(x=>x.id===sid);
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">修改成绩</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">${s?.name||''}</div>
+      <div class="input-group">
+        <label>成绩（mm:ss.cc）</label>
+        <input class="input" id="edit-bftested-val" value="${rec_?formatTime(rec_.timeMs):''}" placeholder="mm:ss.cc 例如 01:23.45" autofocus>
+      </div>
+      <button class="btn btn-accent" onclick="saveBFTestedScoreEdit('${sid}')">保存</button>
+    </div></div>`);
+}
+
+async function saveBFTestedScoreEdit(sid){
+  const BF=State.batchFitness;
+  const raw=(document.getElementById('edit-bftested-val')?.value||'').trim();
+  let newMs;
+  const m=raw.match(/^(\d+):(\d+)\.(\d+)$/);
+  if(m) newMs=parseInt(m[1])*60000+parseInt(m[2])*1000+parseInt(m[3])*10;
+  else{const n=parseFloat(raw);if(isNaN(n)){showToast('成绩格式不正确');return;}newMs=Math.round(n*1000);}
+  const idx=BF.testedRecords.findIndex(r=>r.studentId===sid);
+  if(idx>=0) BF.testedRecords[idx].timeMs=newMs;
+  if(BF.sessionId){
+    const recs=await DB.getRecordsBySession(BF.sessionId);
+    const rec=recs.find(r=>(r.studentIds||[]).includes(sid));
+    if(rec){
+      rec.timeMs=newMs;rec.value=newMs;rec.updatedAt=Date.now();
+      await DB.put('records',rec);
+      await recalcSessionRanks(BF.sessionId);
+    }
+  }
+  closeModal();
+  showToast('已更新');
+  renderTimerRun();
+}
+
+async function deleteBFTestedScore(sid){
+  const ok=await showConfirm('删除成绩','确定删除该学生的成绩吗？');
+  if(!ok) return;
+  const BF=State.batchFitness;
+  BF.testedStudentIds=BF.testedStudentIds.filter(x=>x!==sid);
+  BF.testedRecords=BF.testedRecords.filter(r=>r.studentId!==sid);
+  if(BF.sessionId){
+    const recs=await DB.getRecordsBySession(BF.sessionId);
+    const rec=recs.find(r=>(r.studentIds||[]).includes(sid));
+    if(rec){
+      await DB.del('records',rec.id);
+      const session=await DB.get('sessions',BF.sessionId);
+      if(session){
+        session.testedStudentIds=BF.testedStudentIds;
+        const allStudents=await DB.getStudentsByGroup(session.groupId);
+        const absentCount=(session.absentStudentIds||[]).length;
+        if(BF.testedStudentIds.length+absentCount<allStudents.length&&!session.forceCompleted) session.status='incomplete';
+        await DB.put('sessions',session);
+      }
+      await recalcSessionRanks(BF.sessionId);
+    }
+  }
+  showToast('已删除');
+  renderTimerRun();
+}
+
+async function getStudentPreviousBest(studentId,eventId,currentSessionId){
+  const event=await DB.get('events',eventId);
+  const rankOrder=event?.rankOrder||'asc';
+  const allSessions=await DB.getAll('sessions');
+  const relevantSessions=allSessions.filter(s=>s.eventId===eventId&&s.id!==currentSessionId&&s.status==='completed');
+  let best=null;
+  for(const sess of relevantSessions){
+    const recs=await DB.getRecordsBySession(sess.id);
+    for(const r of recs){
+      if(!(r.studentIds||[]).includes(studentId)) continue;
+      const val=getRecordValue(r,event);
+      if(val==null) continue;
+      if(best===null||compareValues(val,best,rankOrder)<0) best=val;
+    }
+  }
+  return best;
 }
 
 async function deleteSession(sid){
