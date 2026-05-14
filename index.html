@@ -1336,10 +1336,10 @@ function formatValue(value, event) {
 function formatExportValue(value, event) {
   if(value==null) return '';
   if(!event) return formatTime(value);
-  if(event.exportFormat==='s') return (value/1000).toFixed(1);
+  if(event.exportFormat==='s') return (value/1000).toFixed(2);
   if(event.exportFormat==='mmss') {
-    const m=Math.floor(value/60000), s=Math.floor((value%60000)/1000);
-    return `${m}′${String(s).padStart(2,'0')}″`;
+    const m=Math.floor(value/60000), s=Math.floor((value%60000)/1000), cs=Math.floor((value%1000)/10);
+    return `${m}′${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}″`;
   }
   if(event.exportFormat==='raw') return String(value);
   return formatTime(value);
@@ -3645,6 +3645,12 @@ async function exportCSV(sid){
   const records=await DB.getRecordsBySession(sid);
   const students=await DB.getStudentsByGroup(session.groupId);
   const type=getEventType(event);
+  const _dt=new Date(session.date);
+  const _p=n=>String(n).padStart(2,'0');
+  const _dtDisp=`${_dt.getFullYear()}-${_p(_dt.getMonth()+1)}-${_p(_dt.getDate())} ${_p(_dt.getHours())}:${_p(_dt.getMinutes())}`;
+  const _dtFile=`${_dt.getFullYear()}${_p(_dt.getMonth()+1)}${_p(_dt.getDate())}_${_p(_dt.getHours())}${_p(_dt.getMinutes())}`;
+  const _title=`${event?.name||''}  ${group?.name||''}  ${_dtDisp}`;
+  const _filename=`${event?.name||''}  ${group?.name||''}  ${_dtFile}.csv`;
 
   let csv='';
   if(['countdown','input','batch-timing'].includes(type)){
@@ -3661,8 +3667,9 @@ async function exportCSV(sid){
       else{for(const sid2 of r.studentIds){const s=students.find(x=>x.id===sid2);csv+=`${r.rank},${s?.number||''},${s?.name||''},${formatExportValue(r.timeMs,event)}\n`;}}
     }
   }
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=`${group?.name||''}_${event?.name||''}_${new Date(session.date).toISOString().slice(0,10)}.csv`;
+  const csvOut=csv.substring(0,1)+_title+'\n'+csv.substring(1);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csvOut],{type:'text/csv;charset=utf-8;'}));
+  a.download=_filename;
   a.click();showToast('CSV 已导出');
 }
 
@@ -4023,6 +4030,9 @@ async function exportRankingExcel(eventId){
 
   const unitMap={ms:'',count:'个',cm:'cm',ml:'ml'};
   const unit=unitMap[event?.unit]||'';
+  const _rdt=new Date(),_rp=n=>String(n).padStart(2,'0');
+  const _rdtFile=`${_rdt.getFullYear()}${_rp(_rdt.getMonth()+1)}${_rp(_rdt.getDate())}`;
+  const _rtitle=`${event?.name||'排名'}  全局排名  ${_rdt.getFullYear()}-${_rp(_rdt.getMonth()+1)}-${_rp(_rdt.getDate())}`;
   let csv='\uFEFF排名,班级,学号,姓名,成绩\n';
   for(const item of ranking){
     const groupName=item.group?.name||'';
@@ -4031,9 +4041,10 @@ async function exportRankingExcel(eventId){
     const val=formatExportValue(item.value,event)+(unit&&!['ms'].includes(event?.unit)?unit:'');
     csv+=`${item.rank},${groupName},${num},${name},${val}\n`;
   }
+  const csvROut=csv.substring(0,1)+_rtitle+'\n'+csv.substring(1);
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=`${event?.name||'排名'}_排名_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href=URL.createObjectURL(new Blob([csvROut],{type:'text/csv;charset=utf-8;'}));
+  a.download=`${event?.name||'排名'}  全局排名  ${_rdtFile}.csv`;
   a.click();showToast('Excel(CSV) 已导出');
 }
 
