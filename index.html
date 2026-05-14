@@ -2177,15 +2177,20 @@ async function resumeTest(sessionId){
         State.batchFitness.testedRecords.push({studentId:sid,timeMs:r.timeMs,rank:r.rank});
       }
     }
-    // 直接渲染，防止 hash 未变导致 hashchange 不触发
-    window.location.hash='/timer/run';
-    renderTimerRun();
+    if(window.location.hash==='#/timer/run'){
+      renderTimerRun();
+    } else {
+      window.location.hash='/timer/run';
+    }
   } else if(type==='countdown'||type==='input'){
     Countdown.reset();
     State.batchTest.selectedStudentIds=[];
     State.batchTest._selectionInited=false;
-    window.location.hash='/test/input';
-    renderInputTest();
+    if(window.location.hash==='#/test/input'){
+      renderInputTest();
+    } else {
+      window.location.hash='/test/input';
+    }
   }
 }
 
@@ -2532,6 +2537,7 @@ async function doBatchFitnessArchive(){
 
   // 更新session
   const session=await DB.get('sessions',BF.sessionId);
+  if(!session){showToast('数据异常，请重试');return;}
   session.testedStudentIds=BF.testedStudentIds;
   session.absentStudentIds=BF.absentStudentIds||[];
 
@@ -3595,7 +3601,7 @@ async function getStudentPreviousBest(studentId,eventId,currentSessionId){
   const event=await DB.get('events',eventId);
   const rankOrder=event?.rankOrder||'asc';
   const allSessions=await DB.getAll('sessions');
-  const relevantSessions=allSessions.filter(s=>s.eventId===eventId&&s.id!==currentSessionId&&s.status==='completed');
+  const relevantSessions=allSessions.filter(s=>s.eventId===eventId&&s.id!==currentSessionId);
   let best=null;
   for(const sess of relevantSessions){
     const recs=await DB.getRecordsBySession(sess.id);
