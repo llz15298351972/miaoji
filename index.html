@@ -2199,10 +2199,11 @@ async function resumeTest(sessionId){
    ============================================================ */
 async function renderTimerRun() {
   let groupName='快速计时',eventName='',students=[];
+  let e=null;
   const isBF=State.timerMode==='batch-fitness';
   if(State.timerMode==='normal'||isBF){
     const g=await DB.get('groups',State.timerGroupId);
-    const e=await DB.get('events',State.timerEventId);
+    e=await DB.get('events',State.timerEventId);
     groupName=g?.name||''; eventName=e?.name||'';
     students=await DB.getStudentsByGroup(State.timerGroupId);
     students.sort((a,b)=>a.number-b.number);
