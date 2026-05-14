@@ -2145,6 +2145,7 @@ async function resumeTest(sessionId){
   if(type==='batch-timing'){
     Timer.reset();
     State.timerMode='batch-fitness';
+    State.timerEventId=session.eventId;
     State.batchFitness={
       sessionId:sessionId,
       testedStudentIds:session.testedStudentIds||[],
@@ -2158,7 +2159,9 @@ async function resumeTest(sessionId){
         State.batchFitness.testedRecords.push({studentId:sid,timeMs:r.timeMs,rank:r.rank});
       }
     }
-    Router.navigate('/timer/run');
+    // 直接渲染，防止 hash 未变导致 hashchange 不触发
+    window.location.hash='/timer/run';
+    renderTimerRun();
   } else if(type==='countdown'||type==='input'){
     Countdown.reset();
     State.batchTest.selectedStudentIds=[];
@@ -2344,7 +2347,7 @@ async function exitTimer(){
       // 保存已有session为incomplete
       if(BF.sessionId){
         const session=await DB.get('sessions',BF.sessionId);
-        if(session){session.status='incomplete';session.testedStudentIds=BF.testedStudentIds;await DB.put('sessions',session);}
+        if(session){session.status='incomplete';session.testedStudentIds=BF.testedStudentIds;session.absentStudentIds=BF.absentStudentIds||[];await DB.put('sessions',session);}
       }
     }
     Timer.reset();Router.navigate('/');return;
@@ -3154,6 +3157,7 @@ async function renderResults(sessionId){
       </div>
       <div class="btn-row no-print" style="margin-top:16px;">
         <button class="btn btn-outline" onclick="exportCSV('${sessionId}')">导出CSV</button>
+        ${session.status==='incomplete'?`<button class="btn btn-accent" onclick="resumeTest('${sessionId}')">继续测试</button>`:''}
         <button class="btn btn-teal" onclick="Router.navigate('/records')">完成</button>
       </div>
     </div>`;
@@ -3724,8 +3728,8 @@ function handleHistoryCardClick(sid,status){
     renderRecords();
     return;
   }
-  if(status==='incomplete') resumeTest(sid);
-  else Router.navigate('/results/'+sid);
+  // 历史记录页：无论完成与否都进成绩页查看（未完成成绩页有"继续测试"入口）
+  Router.navigate('/results/'+sid);
 }
 function exitHistorySelect(){
   State.historySelection.active=false;
