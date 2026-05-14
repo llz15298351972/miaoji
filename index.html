@@ -736,6 +736,9 @@ body.history-selecting .bottom-nav { display:none !important; }
 .score-row .btn-edit-inline, .score-row .btn-del-inline { width:24px; height:24px; border-radius:50%; border:none; background:none; cursor:pointer; font-size:12px; color:var(--text-muted); display:inline-flex; align-items:center; justify-content:center; padding:0; flex-shrink:0; }
 .score-row .btn-edit-inline:active { background:var(--accent-light); color:var(--accent); }
 .score-row .btn-del-inline:active { background:var(--danger-light,rgba(220,50,50,0.1)); color:var(--danger,#e53e3e); }
+/* 已测完排序切换按钮 */
+.sort-toggle-btn { font-size:11px; padding:2px 8px; border-radius:6px; border:1px solid var(--bg-subtle); background:var(--bg-hover); color:var(--text-secondary); cursor:pointer; white-space:nowrap; font-weight:600; }
+.sort-toggle-btn:active { background:var(--accent-light); color:var(--accent); border-color:var(--accent); }
 /* 学生选人方格 */
 .student-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(76px,1fr)); gap:7px; padding:2px 0 4px; }
 .student-grid-item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:9px 4px 7px; border-radius:10px; border:2px solid var(--bg-subtle); background:var(--bg-card); cursor:pointer; text-align:center; min-height:62px; position:relative; transition:border-color 0.15s,background 0.15s; -webkit-tap-highlight-color:transparent; }
@@ -2127,13 +2130,13 @@ async function startTest(eid){
   else if(type==='batch-timing'){
     Timer.reset();
     State.timerMode='batch-fitness';
-    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[],absentStudentIds:[]};
+    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[],absentStudentIds:[],testedSortBy:'number'};
     Router.navigate('/timer/run');
   }
   else if(type==='countdown'||type==='input'){
     State.batchTest.eventId=eid;State.batchTest.groupId=State.timerGroupId;
     State.batchTest.testedStudentIds=[];State.batchTest.inputValues={};State.batchTest.sessionId=null;
-    State.batchTest.selectedStudentIds=[];State.batchTest._selectionInited=false;State.batchTest.absentStudentIds=[];
+    State.batchTest.selectedStudentIds=[];State.batchTest._selectionInited=false;State.batchTest.absentStudentIds=[];State.batchTest.testedSortBy='number';
     Countdown.reset();
     Router.navigate('/test/select-students');
   }
@@ -2164,7 +2167,8 @@ async function resumeTest(sessionId){
       sessionId:sessionId,
       testedStudentIds:session.testedStudentIds||[],
       absentStudentIds:session.absentStudentIds||[],
-      testedRecords:[]
+      testedRecords:[],
+      testedSortBy:'number'
     };
     // 加载已测成绩用于底部显示
     const allRecs=await DB.getRecordsBySession(sessionId);
@@ -2210,7 +2214,12 @@ async function renderTimerRun() {
     const absentCount=absentIds.size;
     const totalCount=students.length;
     const donePercent=Math.round(((testedCount+absentCount)/Math.max(totalCount,1))*100);
-    const sortedRecs=[...BF.testedRecords].sort((a,b)=>a.timeMs-b.timeMs);
+    const bfSortBy=BF.testedSortBy||'number';
+    const sortedRecs=[...BF.testedRecords].sort((a,b)=>{
+      if(bfSortBy==='score') return (e?.rankOrder==='desc'?b.timeMs-a.timeMs:a.timeMs-b.timeMs);
+      const sa=students.find(x=>x.id===a.studentId),sb=students.find(x=>x.id===b.studentId);
+      return (sa?.number||0)-(sb?.number||0);
+    });
     const untestedList=students.filter(s=>!testedIds.has(s.id)&&!absentIds.has(s.id));
     const absentList=students.filter(s=>absentIds.has(s.id));
     // 预计算测试中 PB
@@ -2228,7 +2237,10 @@ async function renderTimerRun() {
       ${testedCount>0?`<div class="tested-section">
         <div class="tested-header">
           <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
-          <div class="th-count">${testedCount} 人</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="sort-toggle-btn" onclick="toggleBFTestedSort()">${bfSortBy==='score'?'按学号':'按成绩'}</button>
+            <div class="th-count">${testedCount} 人</div>
+          </div>
         </div>
         ${sortedRecs.map((rec)=>{
           const s=students.find(x=>x.id===rec.studentId);
@@ -2351,7 +2363,7 @@ async function doSwitchGroup(newGid){
       for(const r of recs) await DB.del('records',r.id);
       await DB.del('sessions',BF.sessionId);
     }
-    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[],absentStudentIds:[]};
+    State.batchFitness={sessionId:null,testedStudentIds:[],testedRecords:[],absentStudentIds:[],testedSortBy:'number'};
   }
   State.timerGroupId=newGid;
   closeModal();
@@ -2436,6 +2448,16 @@ async function openStudentPicker(rank){
       </div>
       ${cur.length>0?`<div style="padding:10px 0 0;text-align:center;"><button class="btn btn-accent btn-sm" onclick="closeModal()">确定</button></div>`:''}
     </div></div>`);
+}
+
+function toggleTestedSort(){
+  State.batchTest.testedSortBy=State.batchTest.testedSortBy==='score'?'number':'score';
+  if(location.hash.includes('/test/batch-timing')) renderBatchTimingTest();
+  else renderInputTest();
+}
+function toggleBFTestedSort(){
+  State.batchFitness.testedSortBy=State.batchFitness.testedSortBy==='score'?'number':'score';
+  renderTimerRun();
 }
 
 function filterStudentList(){
@@ -2795,6 +2817,17 @@ async function renderInputTest(){
     }
   }
 
+  // 已测完排序
+  const sortBy=B.testedSortBy||'number';
+  const sortedTested=[...testedInRound];
+  if(sortBy==='score'){
+    sortedTested.sort((a,b)=>{
+      const va=B.inputValues[a.id],vb=B.inputValues[b.id];
+      if(va==null&&vb==null) return 0; if(va==null) return 1; if(vb==null) return -1;
+      return event?.rankOrder==='desc'?vb-va:va-vb;
+    });
+  }
+
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="topbar">
@@ -2839,9 +2872,12 @@ async function renderInputTest(){
       ${testedCount?`<div class="tested-section">
         <div class="tested-header">
           <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
-          <div class="th-count">${testedCount} 人</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="sort-toggle-btn" onclick="toggleTestedSort()">${sortBy==='score'?'按学号':'按成绩'}</button>
+            <div class="th-count">${testedCount} 人</div>
+          </div>
         </div>
-        ${testedInRound.map(s=>{
+        ${sortedTested.map(s=>{
           const val=B.inputValues[s.id];
           const dispVal=val!=null?(event?.unit==='ms'?formatTime(val):val+getUnitLabel(event)):'--';
           return `<div class="score-row done">
@@ -2917,6 +2953,17 @@ async function renderBatchTimingTest(){
     }
   }
 
+  // 已测完排序
+  const bSortBy=B.testedSortBy||'number';
+  const bSortedTested=[...testedStudents];
+  if(bSortBy==='score'){
+    bSortedTested.sort((a,b)=>{
+      const va=B.inputValues[a.id],vb=B.inputValues[b.id];
+      if(va==null&&vb==null) return 0; if(va==null) return 1; if(vb==null) return -1;
+      return event?.rankOrder==='desc'?vb-va:va-vb;
+    });
+  }
+
   document.getElementById('app').innerHTML=`
     <div class="page no-nav">
       <div class="topbar">
@@ -2956,9 +3003,12 @@ async function renderBatchTimingTest(){
       ${testedStudents.length?`<div class="tested-section">
         <div class="tested-header">
           <div class="th-label"><span style="width:18px;height:18px;border-radius:50%;background:var(--teal);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;">&#10003;</span> 已测完</div>
-          <div class="th-count">${testedStudents.length} 人</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="sort-toggle-btn" onclick="toggleTestedSort()">${bSortBy==='score'?'按学号':'按成绩'}</button>
+            <div class="th-count">${testedStudents.length} 人</div>
+          </div>
         </div>
-        ${testedStudents.map(s=>`<div class="score-row done">
+        ${bSortedTested.map(s=>`<div class="score-row done">
           <span class="snum">${String(s.number).padStart(2,'0')}</span>
           <span class="sname">${s.name}${batchPB[s.id]?'<span class="pb-badge">PB</span>':''}</span>
           <span class="score-val">${formatTime(B.inputValues[s.id])}</span>
